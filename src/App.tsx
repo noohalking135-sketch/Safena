@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Home, ShoppingBag, Star, User, Heart, Search, Package, Ship, Languages, ChevronLeft, Phone, MapPin, MessageCircle, Pencil } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- Types ---
 type Category = "food" | "clothing" | "electronics";
@@ -209,6 +210,15 @@ export default function App() {
     return <Onboarding onComplete={handleOnboardingComplete} lang={lang} />;
   }
 
+  const tabs = [
+    { id: "home", label: t.home, icon: Home },
+    { id: "products", label: t.products, icon: ShoppingBag },
+    { id: "reviews", label: t.reviews, icon: Star },
+    { id: "account", label: t.account, icon: User },
+  ] as const;
+
+  const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
+
   return (
     <div className="min-h-screen bg-amber-50/30 pb-24" dir={lang === "ar" ? "rtl" : "ltr"}>
       <LanguageToggle lang={lang} setLang={setLang} />
@@ -230,31 +240,48 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        {activeTab === "home" && (
-          <HomeTab onCategoryClick={(cat) => { setSelectedCategory(cat); setActiveTab("products"); }} favorites={favorites} products={PRODUCTS} avgRating={avgRating} lang={lang} t={t} />
-        )}
-        {activeTab === "products" && (
-          <ProductsTab
-            products={filteredProducts}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedVendor={selectedVendor}
-            setSelectedVendor={setSelectedVendor}
-            availableVendors={availableVendors}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            favorites={favorites}
-            toggleFavorite={toggleFavorite}
-            avgRating={avgRating}
-            reviewCount={(id: string) => productReviews(id).length}
-            onReviewClick={setReviewingProduct}
-            lang={lang}
-            t={t}
-          />
-        )}
-        {activeTab === "reviews" && <ReviewsTab reviews={reviews} products={PRODUCTS} lang={lang} t={t} />}
-        {activeTab === "account" && <AccountTab favorites={favorites} products={PRODUCTS} profile={profile} onUpdateProfile={handleUpdateProfile} lang={lang} />}
+      <main className="max-w-5xl mx-auto px-4 py-6 overflow-hidden">
+        <AnimatePresence mode="wait" custom={currentIndex}>
+          <motion.div
+            key={activeTab}
+            custom={currentIndex}
+            initial={(custom: number) => ({ 
+              opacity: 0, 
+              x: custom > 0 ? 50 : -50 
+            })}
+            animate={{ opacity: 1, x: 0 }}
+            exit={(custom: number) => ({ 
+              opacity: 0, 
+              x: custom > 0 ? -50 : 50 
+            })}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {activeTab === "home" && (
+              <HomeTab onCategoryClick={(cat) => { setSelectedCategory(cat); setActiveTab("products"); }} favorites={favorites} products={PRODUCTS} avgRating={avgRating} lang={lang} t={t} />
+            )}
+            {activeTab === "products" && (
+              <ProductsTab
+                products={filteredProducts}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedVendor={selectedVendor}
+                setSelectedVendor={setSelectedVendor}
+                availableVendors={availableVendors}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                favorites={favorites}
+                toggleFavorite={toggleFavorite}
+                avgRating={avgRating}
+                reviewCount={(id: string) => productReviews(id).length}
+                onReviewClick={setReviewingProduct}
+                lang={lang}
+                t={t}
+              />
+            )}
+            {activeTab === "reviews" && <ReviewsTab reviews={reviews} products={PRODUCTS} lang={lang} t={t} />}
+            {activeTab === "account" && <AccountTab favorites={favorites} products={PRODUCTS} profile={profile} onUpdateProfile={handleUpdateProfile} lang={lang} />}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Review Dialog */}
@@ -301,18 +328,24 @@ export default function App() {
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-amber-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
         <div className="max-w-5xl mx-auto grid grid-cols-4 gap-1 px-2 py-2">
-          {[
-            { id: "home", label: t.home, icon: Home },
-            { id: "products", label: t.products, icon: ShoppingBag },
-            { id: "reviews", label: t.reviews, icon: Star },
-            { id: "account", label: t.account, icon: User },
-          ].map((tab) => {
+          {tabs.map((tab, index) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id as typeof activeTab)} className={`flex flex-col items-center gap-1 py-2 rounded-xl transition-colors ${active ? "text-amber-600 bg-amber-50" : "text-stone-400"}`}>
+              <button 
+                key={tab.id} 
+                onClick={() => setActiveTab(tab.id as typeof activeTab)} 
+                className={`relative flex flex-col items-center gap-1 py-2 rounded-xl transition-colors ${active ? "text-amber-600 bg-amber-50" : "text-stone-400"}`}
+              >
                 <Icon className={`w-5 h-5 ${active ? "stroke-[2.5]" : ""}`} />
                 <span className="text-xs font-medium">{tab.label}</span>
+                {active && (
+                  <motion.div 
+                    layoutId="active-pill" 
+                    className="absolute inset-0 bg-amber-50 rounded-xl -z-10"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
               </button>
             );
           })}
