@@ -23,7 +23,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
       data: {
         customer_name: user?.name || "عميل",
         customer_phone: user?.phone || "00000000",
-        total: String(cartTotal || "0"),
+        total: Number(cartTotal) || 0,
         items: JSON.stringify(cartItems || []),
         location: location || "الموقع",
         status: "قيد التحضير"
