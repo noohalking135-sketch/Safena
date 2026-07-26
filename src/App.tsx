@@ -8,12 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-// --- Supabase Client Initialization ---
-// @ts-ignore
-const supabase = window.supabase ? window.supabase.createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-) : null;
+// --- Supabase Config ---
+// Fallback to empty strings if env vars are not available to prevent build errors
+const SUPABASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL) || "";
+const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || "";
 
 // --- i18n Translations ---
 const translations = {
@@ -737,8 +735,24 @@ function ComplaintsPage({ t, lang, user }: { t: Translation; lang: Lang; user: a
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Simulate API call to submit complaint
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Send complaint to Supabase via fetch
+      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+        await fetch(`${SUPABASE_URL}/rest/v1/complaints`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            user_id: user?.phone,
+            subject,
+            details,
+            status: "pending",
+            created_at: new Date().toISOString(),
+          }),
+        });
+      }
       
       setSubmitted(true);
       setSubject("");
@@ -1138,11 +1152,48 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem("noah_user");
       const savedAddresses = localStorage.getItem("noah_addresses");
+      const savedOrders = localStorage.getItem("noah_orders");
+      
       if (savedUser) {
         setUser(JSON.parse(savedUser));
       }
       if (savedAddresses) {
         setAddresses(JSON.parse(savedAddresses));
+      }
+      if (savedOrders) {
+        const localOrders = JSON.parse(savedOrders);
+        setOrders(localOrders);
+      }
+
+      // Fetch orders from Supabase
+      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+        fetch(`${SUPABASE_URL}/rest/v1/orders?order=created_at.desc`, {
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+              const supabaseOrders = data.map(o => ({
+                id: o.id,
+                status: o.status,
+                total: o.total,
+                date: o.created_at.split('T')[0],
+                items: o.items,
+                location: o.location,
+                timer: o.timer || 300,
+              }));
+              // Merge with local orders, avoiding duplicates by ID
+              setOrders(prev => {
+                const existingIds = new Set(prev.map(o => o.id));
+                const newOrders = supabaseOrders.filter(o => !existingIds.has(o.id));
+                return [...prev, ...newOrders];
+              });
+            }
+          })
+          .catch(err => console.error("Error fetching orders from Supabase:", err));
       }
     } catch (e) {
       console.error("Failed to load user data", e);
@@ -1162,6 +1213,13 @@ export default function App() {
       localStorage.setItem("noah_addresses", JSON.stringify(addresses));
     }
   }, [addresses]);
+
+  // Save orders to localStorage whenever they change
+  useEffect(() => {
+    if (orders.length > 0) {
+      localStorage.setItem("noah_orders", JSON.stringify(orders));
+    }
+  }, [orders]);
 
   // Timer effect for active orders
   useEffect(() => {
@@ -1212,11 +1270,9 @@ export default function App() {
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
     try {
-      // Simulate API call to create order
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
       const newOrder = {
-        id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: orderId,
         status: "preparing",
         total,
         date: new Date().toISOString().split('T')[0],
@@ -1224,8 +1280,31 @@ export default function App() {
         location,
         timer: 300, // 5 minutes countdown
       };
-      
-      setOrders([newOrder, ...orders]);
+
+      // Save to Supabase via fetch
+      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+        await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            id: orderId,
+            user_id: user?.phone,
+            status: "preparing",
+            total,
+            items: cartItems,
+            location,
+            timer: 300,
+            created_at: new Date().toISOString(),
+          }),
+        });
+      }
+
+      // Save to localStorage and state
+      setOrders(prev => [newOrder, ...prev]);
       setCart({});
       setShowSuccess(true);
       setTimeout(() => {
