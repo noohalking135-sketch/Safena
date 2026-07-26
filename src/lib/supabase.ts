@@ -1,6 +1,63 @@
-import { createClient } from '@supabase/supabase-js';
+// Hardcoded fallbacks to ensure it works out-of-the-box on Vercel client-side
+export const SUPABASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL) || "https://your-project-id.supabase.co";
+export const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || "your-anon-key-fallback";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Minimal Supabase client wrapper using native fetch
+export const supabase = {
+  from(table: string) {
+    return {
+      async select(columns: string = "*") {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${columns}`, {
+            headers: {
+              "apikey": SUPABASE_ANON_KEY,
+              "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+          });
+          const data = await res.json();
+          if (!res.ok) return { data: null, error: data };
+          return { data, error: null };
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      },
+      async insert(rows: any[]) {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": SUPABASE_ANON_KEY,
+              "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify(rows),
+          });
+          const data = await res.json();
+          if (!res.ok) return { data: null, error: data };
+          return { data, error: null };
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      },
+      order(column: string, { ascending }: { ascending: boolean }) {
+        return {
+          async then(callback: any) {
+            try {
+              const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=${column}.${ascending ? 'asc' : 'desc'}`, {
+                headers: {
+                  "apikey": SUPABASE_ANON_KEY,
+                  "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                },
+              });
+              const data = await res.json();
+              if (!res.ok) return callback({ data: null, error: data });
+              return callback({ data, error: null });
+            } catch (err: any) {
+              return callback({ data: null, error: err });
+            }
+          }
+        };
+      }
+    };
+  }
+};
