@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
-export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: any) {
+export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, cartItems, cartTotal }: any) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [newLocation, setNewLocation] = useState("");
   const [isNew, setIsNew] = useState(false);
@@ -19,9 +19,12 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: 
     setIsSubmitting(true);
 
     const payload = {
-      subject: "New Order",
-      details: `Order to ${location}`,
-      created_at: new Date().toISOString()
+      customer_name: user?.name || "عميل",
+      customer_phone: user?.phone || "00000000",
+      total: cartTotal,
+      items: cartItems,
+      location: location || "الموقع",
+      status: "قيد التحضير"
     };
 
     try {
@@ -31,9 +34,9 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: 
           "Content-Type": "application/json",
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "Prefer": "return=minimal"
+          "Prefer": "return=representation"
         },
-        body: JSON.stringify([payload]),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -41,11 +44,11 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: 
       } else {
         const errData = await res.json();
         console.error("Supabase order insert error:", errData.message || errData);
+        alert(`خطأ في إرسال الطلب: ${errData.message || JSON.stringify(errData)}`);
         // Fallback to local storage if network is offline or RLS blocks
         const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
         localOrders.push(payload);
         localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
-        alert("تم حفظ الطلب محلياً بنجاح");
       }
     } catch (error) {
       console.error("Network error submitting order:", error);

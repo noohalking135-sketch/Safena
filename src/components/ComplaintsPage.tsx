@@ -17,9 +17,11 @@ export function ComplaintsPage({ t, user }: any) {
     setSubmitting(true);
 
     const payload = {
+      customer_name: user?.name || "عميل",
+      customer_phone: user?.phone || "00000000",
       subject: subject,
       details: details,
-      created_at: new Date().toISOString()
+      status: "جديد"
     };
 
     try {
@@ -29,9 +31,9 @@ export function ComplaintsPage({ t, user }: any) {
           "Content-Type": "application/json",
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "Prefer": "return=minimal"
+          "Prefer": "return=representation"
         },
-        body: JSON.stringify([payload]),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -43,11 +45,11 @@ export function ComplaintsPage({ t, user }: any) {
       } else {
         const errData = await res.json();
         console.error("Supabase complaint insert error:", errData.message || errData);
+        alert(`خطأ في إرسال الشكوى: ${errData.message || JSON.stringify(errData)}`);
         // Fallback to local storage if network is offline or RLS blocks
         const localComplaints = JSON.parse(localStorage.getItem("noah_local_complaints") || "[]");
         localComplaints.push(payload);
         localStorage.setItem("noah_local_complaints", JSON.stringify(localComplaints));
-        alert("تم إرسال الشكوى بنجاح");
       }
     } catch (error) {
       console.error("Network error submitting complaint:", error);
