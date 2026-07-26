@@ -1,8 +1,6 @@
-// Hardcoded fallbacks to ensure it works out-of-the-box on Vercel client-side
-export const SUPABASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL) || "https://your-project-id.supabase.co";
-export const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || "your-anon-key-fallback";
+export const SUPABASE_URL = "https://YOUR_ACTUAL_PROJECT_ID.supabase.co";
+export const SUPABASE_ANON_KEY = "YOUR_ACTUAL_ANON_KEY_HERE";
 
-// Minimal Supabase client wrapper using native fetch
 export const supabase = {
   from(table: string) {
     return {
@@ -29,12 +27,15 @@ export const supabase = {
               "Content-Type": "application/json",
               "apikey": SUPABASE_ANON_KEY,
               "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+              "Prefer": "return=minimal"
             },
             body: JSON.stringify(rows),
           });
-          const data = await res.json();
-          if (!res.ok) return { data: null, error: data };
-          return { data, error: null };
+          if (!res.ok) {
+            const errData = await res.json();
+            return { data: null, error: errData };
+          }
+          return { data: null, error: null };
         } catch (err: any) {
           return { data: null, error: err };
         }
