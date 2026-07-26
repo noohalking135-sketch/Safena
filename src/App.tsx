@@ -123,7 +123,7 @@ export default function App() {
     }, 800);
   };
 
-  const handleCheckoutConfirm = async (location: string) => {
+  const handleCheckoutConfirm = (location: string) => {
     setShowCheckout(false);
     
     const cartItems = Object.entries(cart).map(([id, qty]) => {
@@ -133,44 +133,24 @@ export default function App() {
     
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
-    try {
-      const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-      const newOrder = {
-        id: orderId,
-        status: "preparing",
-        total,
-        date: new Date().toISOString().split('T')[0],
-        items: cartItems,
-        location,
-        timer: 300,
-      };
+    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newOrder = {
+      id: orderId,
+      status: "قيد التحضير",
+      total,
+      date: new Date().toISOString().split('T')[0],
+      items: cartItems,
+      location,
+      timer: 300,
+    };
 
-      const { error } = await supabase.from("orders").insert([{
-        id: orderId,
-        user_id: user?.phone,
-        status: "preparing",
-        total,
-        items: cartItems,
-        location,
-        timer: 300,
-        created_at: new Date().toISOString(),
-      }]);
-
-      if (error) {
-        console.error("Supabase order insert error:", error.message);
-      }
-
-      setOrders(prev => [newOrder, ...prev]);
-      setCart({});
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        setPage("orders");
-      }, 2000);
-    } catch (error) {
-      console.error("Error creating order:", error);
-      alert("Failed to create order. Please try again.");
-    }
+    setOrders(prev => [newOrder, ...prev]);
+    setCart({});
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+      setPage("orders");
+    }, 2000);
   };
 
   const pageIndex = getPageIndex(page);
@@ -190,6 +170,13 @@ export default function App() {
       </div>
     );
   }
+
+  const cartItems = Object.entries(cart).map(([id, qty]) => {
+    const product = mockProducts.find(p => p.id === Number(id))!;
+    return { name: product.name, qty, price: product.price };
+  });
+  
+  const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
@@ -238,6 +225,8 @@ export default function App() {
             lang={lang} 
             user={user}
             addresses={addresses} 
+            cartItems={cartItems}
+            cartTotal={cartTotal}
             onClose={() => setShowCheckout(false)} 
             onConfirm={handleCheckoutConfirm}
           />
