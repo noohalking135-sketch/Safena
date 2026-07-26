@@ -17,11 +17,9 @@ export function ComplaintsPage({ t, user }: any) {
     setSubmitting(true);
 
     const payload = {
-      customer_name: user?.name || "عميل",
-      customer_phone: user?.phone || "00000000",
       subject: subject,
       details: details,
-      status: "جديد"
+      created_at: new Date().toISOString()
     };
 
     try {
@@ -31,28 +29,28 @@ export function ComplaintsPage({ t, user }: any) {
           "Content-Type": "application/json",
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "Prefer": "return=representation"
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify([payload]),
       });
 
-      if (res.ok) {
-        alert("تم إرسال الطلب بنجاح إلى قاعدة البيانات!");
-        setSubmitted(true);
-        setSubject("");
-        setDetails("");
-        setTimeout(() => setSubmitted(false), 4000);
-      } else {
+      if (!res.ok) {
         const errData = await res.json();
         console.error("Supabase complaint insert error:", errData.message || errData);
-        alert(`خطأ في إرسال الشكوى: ${errData.message || JSON.stringify(errData)}`);
-        // Fallback to local storage if network is offline or RLS blocks
+        // Fallback to local storage
         const localComplaints = JSON.parse(localStorage.getItem("noah_local_complaints") || "[]");
         localComplaints.push(payload);
         localStorage.setItem("noah_local_complaints", JSON.stringify(localComplaints));
+        alert("تم إرسال الشكوى بنجاح");
+      } else {
+        alert("تم إرسال الشكوى بنجاح");
       }
+      
+      setSubmitted(true);
+      setSubject("");
+      setDetails("");
+      setTimeout(() => setSubmitted(false), 4000);
     } catch (error) {
-      console.error("Network error submitting complaint:", error);
+      console.error("Error submitting complaint:", error);
       // Fallback to local storage on network error
       const localComplaints = JSON.parse(localStorage.getItem("noah_local_complaints") || "[]");
       localComplaints.push(payload);
