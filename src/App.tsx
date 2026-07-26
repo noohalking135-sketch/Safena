@@ -8,6 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
+// --- Supabase Client Initialization ---
+// @ts-ignore
+const supabase = window.supabase ? window.supabase.createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+) : null;
+
 // --- i18n Translations ---
 const translations = {
   ar: {
