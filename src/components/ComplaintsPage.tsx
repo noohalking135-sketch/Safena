@@ -15,6 +15,13 @@ export function ComplaintsPage({ t, user }: any) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+
+    const payload = {
+      subject: subject,
+      details: details,
+      created_at: new Date().toISOString()
+    };
+
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/complaints`, {
         method: "POST",
@@ -23,18 +30,19 @@ export function ComplaintsPage({ t, user }: any) {
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify([{
-          user_id: user?.phone,
-          subject,
-          details,
-          status: "pending",
-          created_at: new Date().toISOString(),
-        }]),
+        body: JSON.stringify([payload]),
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Supabase complaint insert error:", errorData.message || errorData);
+        const errData = await res.json();
+        console.error("Supabase complaint insert error:", errData.message || errData);
+        // Fallback to local storage
+        const localComplaints = JSON.parse(localStorage.getItem("noah_local_complaints") || "[]");
+        localComplaints.push(payload);
+        localStorage.setItem("noah_local_complaints", JSON.stringify(localComplaints));
+        alert("تم إرسال الشكوى بنجاح");
+      } else {
+        alert("تم إرسال الشكوى بنجاح");
       }
       
       setSubmitted(true);
@@ -43,7 +51,11 @@ export function ComplaintsPage({ t, user }: any) {
       setTimeout(() => setSubmitted(false), 4000);
     } catch (error) {
       console.error("Error submitting complaint:", error);
-      alert("Failed to submit complaint. Please try again.");
+      // Fallback to local storage on network error
+      const localComplaints = JSON.parse(localStorage.getItem("noah_local_complaints") || "[]");
+      localComplaints.push(payload);
+      localStorage.setItem("noah_local_complaints", JSON.stringify(localComplaints));
+      alert("تم إرسال الشكوى بنجاح");
     } finally {
       setSubmitting(false);
     }

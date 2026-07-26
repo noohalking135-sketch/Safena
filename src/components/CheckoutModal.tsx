@@ -3,22 +3,61 @@ import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: any) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [newLocation, setNewLocation] = useState("");
   const [isNew, setIsNew] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleConfirm = () => {
-    if (isNew && newLocation.trim()) {
-      onConfirm(newLocation.trim());
-    } else if (selectedLocation) {
-      onConfirm(selectedLocation);
+  const handleConfirm = async () => {
+    const location = isNew ? newLocation.trim() : selectedLocation;
+    if (!location) return;
+
+    setIsSubmitting(true);
+
+    const payload = {
+      subject: "New Order",
+      details: `Order to ${location}`,
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify([payload]),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error("Supabase order insert error:", errData.message || errData);
+        // Fallback to local storage
+        const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
+        localOrders.push(payload);
+        localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
+        alert("تم حفظ الطلب محلياً بنجاح");
+      }
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      // Fallback to local storage on network error
+      const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
+      localOrders.push(payload);
+      localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
+      alert("تم حفظ الطلب محلياً بنجاح");
+    } finally {
+      setIsSubmitting(false);
+      onConfirm(location);
     }
   };
 
-  const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim());
+  const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim()) || isSubmitting;
 
   return (
     <div className="absolute inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm">
