@@ -1,119 +1,144 @@
 import { useState } from "react";
-import { Search, Star, Clock, ChevronRight } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, Plus, Minus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { categories, products } from "@/lib/data";
-import type { TranslationKeys } from "@/lib/i18n";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { mockCategories, mockProducts } from "@/lib/data";
+import { CustomOrderForm } from "@/components/CustomOrderForm";
 
-export function HomePage({ t, lang }: { t: TranslationKeys; lang: "ar" | "en" }) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: any) {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [showCustomForm, setShowCustomForm] = useState(false);
 
-  const filteredProducts = products.filter((p) => {
-    const matchesCategory = selectedCategory ? p.id.startsWith(selectedCategory.charAt(0)) : true;
-    const matchesSearch = p.name[lang].toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const addToCart = (id: number) => setCart({ ...cart, [id]: (cart[id] || 0) + 1 });
+  const removeFromCart = (id: number) => {
+    const newCart = { ...cart };
+    if (newCart[id] > 1) newCart[id]--;
+    else delete newCart[id];
+    setCart(newCart);
+  };
+
+  const handleAddCustom = (item: any) => {
+    setCart({ ...cart, [item.id]: (cart[item.id] || 0) + item.qty });
+    mockProducts.push(item);
+    setActiveCategory(null);
+  };
+
+  const cartCount = Object.values(cart).reduce((a: number, b: number) => a + b, 0);
+  const cartTotal = Object.entries(cart).reduce((sum: number, [id, qty]: [string, any]) => {
+    const product = mockProducts.find((p) => p.id === Number(id));
+    return sum + (product ? product.price * qty : 0);
+  }, 0);
+
+  const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
   return (
-    <div className="min-h-full bg-slate-50 dark:bg-slate-900">
-      <div className="bg-amber-400 px-5 pb-8 pt-14">
-        <h1 className="text-3xl font-extrabold text-slate-900">
-          {lang === "ar" ? "توصيل" : "Delivery"}
-        </h1>
-        <p className="mt-1 text-sm font-medium text-slate-800/80">
-          {lang === "ar" ? "كل ما تحتاجه، بسرعة إلى بابك" : "Everything you need, fast to your door"}
-        </p>
-        
-        <div className="relative mt-5">
-          <Search className="absolute top-3.5 start-3 h-5 w-5 text-slate-400" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t.home.searchPlaceholder}
-            className="rounded-2xl border-0 bg-white py-6 ps-11 shadow-lg dark:bg-slate-800"
-          />
+    <div className="flex flex-col gap-6 p-4 pt-12">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.appName} <span className="text-yellow-500">.</span></h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
+      </header>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+        <Input placeholder={t.searchPlaceholder} className="rounded-xl border-yellow-200 bg-white py-6 pl-10 shadow-sm dark:border-slate-700 dark:bg-slate-800" />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.categories}</h2>
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {mockCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                if (cat.id === "custom") {
+                  setShowCustomForm(true);
+                } else {
+                  setActiveCategory(activeCategory === cat.id ? null : cat.id);
+                }
+              }}
+              className={cn(
+                "flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-2xl shadow-sm transition-all",
+                activeCategory === cat.id ? "bg-yellow-400 text-slate-800 scale-105" : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              )}
+            >
+              <cat.icon className="h-8 w-8 mb-1" />
+              <span className="text-xs font-semibold">{t[cat.labelKey]}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="px-5 pt-6">
-        {selectedCategory ? (
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className="mb-4 flex items-center gap-1 text-sm font-bold text-amber-600 hover:underline"
-          >
-            <ChevronRight className="h-4 w-4 rotate-180 rtl:rotate-0" />
-            {t.home.backToCategories}
-          </button>
-        ) : (
-          <h2 className="mb-3 text-lg font-bold text-slate-900 dark:text-white">{t.home.categories}</h2>
-        )}
-
-        {!selectedCategory && (
-          <div className="grid grid-cols-3 gap-3">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className="flex flex-col items-center gap-2"
-              >
-                <div className={`flex h-20 w-20 items-center justify-center rounded-2xl text-3xl shadow-sm ${cat.color}`}>
-                  {cat.icon}
-                </div>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                  {cat.name[lang]}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {selectedCategory && (
-          <h2 className="mb-3 text-lg font-bold text-slate-900 dark:text-white">
-            {categories.find((c) => c.id === selectedCategory)?.name[lang]}
-          </h2>
-        )}
-
-        {!selectedCategory && (
-          <div className="mt-6 mb-3 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t.home.popular}</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t.home.popularDesc}</p>
-            </div>
-          </div>
-        )}
-
+      <div className="flex flex-col gap-3">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{activeCategory ? t.categories : t.popular}</h2>
         <div className="grid grid-cols-2 gap-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden rounded-2xl border-0 shadow-md">
-              <div className="relative h-32 w-full overflow-hidden">
-                <img src={product.image} alt={product.name[lang]} className="h-full w-full object-cover" />
-                <div className="absolute top-2 end-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-slate-900 backdrop-blur-sm">
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                  {product.rating}
+            <Card key={product.id} className="overflow-hidden border-none shadow-md">
+              <CardContent className="p-0">
+                <div className="relative h-32 w-full overflow-hidden">
+                  <img src={product.image} alt={product.name[lang]} className="h-full w-full object-cover" />
                 </div>
-              </div>
-              <CardContent className="p-3">
-                <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">
-                  {product.name[lang]}
-                </h3>
-                <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">
-                  {product.desc[lang]}
-                </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-base font-extrabold text-amber-600 dark:text-amber-400">
-                    {product.price} {lang === "ar" ? "ر.س" : "SAR"}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-slate-400">
-                    <Clock className="h-3 w-3" />
-                    {product.time} {t.home.mins}
-                  </span>
+                <div className="p-3">
+                  <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">{product.name[lang]}</h3>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="font-bold text-yellow-600 dark:text-yellow-400 text-sm">{product.price} {t.currency}</span>
+                    {cart[product.id] ? (
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="outline" className="h-7 w-7 rounded-full p-0" onClick={() => removeFromCart(product.id)}>
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-4 text-center text-sm font-bold">{cart[product.id]}</span>
+                        <Button 
+                          size="icon" 
+                          className="h-7 w-7 rounded-full bg-yellow-400 p-0 text-slate-800 hover:bg-yellow-500" 
+                          onClick={(e) => {
+                            addToCart(product.id);
+                            onAddToCart(product, e.currentTarget.getBoundingClientRect());
+                          }}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        size="icon" 
+                        className="h-8 w-8 rounded-full bg-yellow-400 p-0 text-slate-800 hover:bg-yellow-500" 
+                        onClick={(e) => {
+                          addToCart(product.id);
+                          onAddToCart(product, e.currentTarget.getBoundingClientRect());
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       </div>
+
+      {cartCount > 0 && (
+        <Card className="fixed bottom-20 left-4 right-4 z-40 border-yellow-200 bg-yellow-50 shadow-lg dark:border-yellow-800 dark:bg-yellow-900/20">
+          <CardContent className="flex items-center justify-between p-4">
+            <div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{cartCount} {t.items}</p>
+              <p className="text-lg font-bold text-slate-800 dark:text-white">{cartTotal} {t.currency}</p>
+            </div>
+            <Button onClick={onCheckout} className="rounded-full bg-yellow-400 text-slate-800 hover:bg-yellow-500">
+              {t.checkout} 
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {showCustomForm && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <CustomOrderForm t={t} lang={lang} onAdd={handleAddCustom} onClose={() => setShowCustomForm(false)} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,46 +1,88 @@
-import { Package } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import type { TranslationKeys } from "@/lib/i18n";
+import { Package, Bike, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-export function OrdersPage({ t, lang }: { t: TranslationKeys; lang: "ar" | "en" }) {
+export function OrdersPage({ t, lang, orders, setPage }: any) {
+  const statusColors: Record<string, string> = {
+    onWay: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    delivered: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    preparing: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  };
+
   return (
-    <div className="min-h-full bg-slate-50 px-5 pt-14 dark:bg-slate-900">
-      <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">{t.orders.title}</h1>
-      
-      <div className="mt-4 flex gap-2 border-b border-slate-200 dark:border-slate-700">
-        <button className="border-b-2 border-amber-400 pb-2 text-sm font-bold text-amber-600">
-          {t.orders.active}
-        </button>
-        <button className="pb-2 text-sm font-bold text-slate-400">
-          {t.orders.past}
-        </button>
-      </div>
-
-      <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 py-12 dark:border-slate-700">
-        <Package className="h-12 w-12 text-slate-300 dark:text-slate-600" />
-        <h3 className="mt-3 text-base font-bold text-slate-600 dark:text-slate-300">{t.orders.empty}</h3>
-        <p className="mt-1 text-xs text-slate-400">{t.orders.emptyDesc}</p>
-      </div>
-
-      <Card className="mt-4 rounded-2xl border-0 shadow-md dark:bg-slate-800">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-slate-900 dark:text-white">#12345</span>
-            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-              {t.orders.inProgress}
-            </span>
+    <div className="flex flex-col gap-4 p-4 pt-12">
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.orders}</h1>
+      {orders.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+          <Package className="h-16 w-16 text-yellow-300" />
+          <div>
+            <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200">{t.emptyOrders}</h2>
+            <p className="text-sm text-slate-400">{t.emptyOrdersDesc}</p>
           </div>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {lang === "ar" ? "برجر دبل تشيز، بيتزا مارجريتا" : "Double Cheeseburger, Margherita Pizza"}
-          </p>
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-            <div className="h-full w-3/4 rounded-full bg-amber-400"></div>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">
-            {lang === "ar" ? "الوصول المتوقع: 15 دقيقة" : "ETA: 15 mins"}
-          </p>
-        </CardContent>
-      </Card>
+          <Button onClick={() => setPage("home")} className="rounded-full bg-yellow-400 text-slate-800 hover:bg-yellow-500">
+            {t.startOrder}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {orders.map((order: any) => (
+            <Card key={order.id} className="border-yellow-100 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+                <div>
+                  <CardTitle className="text-base text-slate-800 dark:text-white">{t.orderNumber}{order.id.split("-")[1]}</CardTitle>
+                  <CardDescription className="text-xs">{order.date}</CardDescription>
+                </div>
+                <Badge className={cn("font-semibold", statusColors[order.status])}>
+                  {t[`status${order.status.charAt(0).toUpperCase() + order.status.slice(1)}` as keyof typeof t] as string}
+                </Badge>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {order.items.map((item: any, idx: number) => (
+                    <Badge key={idx} variant="outline" className="border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                      {item.qty}x {item.name[lang]}
+                    </Badge>
+                  ))}
+                </div>
+                
+                {order.status === "preparing" && (
+                  <div className="mb-3 rounded-xl bg-yellow-50 p-3 text-center dark:bg-yellow-900/20">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t.arrivalTime}</p>
+                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {Math.floor(order.timer / 60)}:{(order.timer % 60).toString().padStart(2, "0")}
+                    </p>
+                  </div>
+                )}
+
+                {order.status === "onWay" && (
+                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-blue-50 p-3 dark:bg-blue-900/20">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40">
+                      <Bike className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{t.captainName}</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-white" dir="ltr">+963959213692</p>
+                    </div>
+                    <a href="tel:+963959213692">
+                      <Button size="icon" className="rounded-full bg-blue-500 hover:bg-blue-600">
+                        <Phone className="h-4 w-4" />
+                      </Button>
+                    </a>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                  <span>{order.items.length} {t.items}</span>
+                  <span className="font-bold text-slate-800 dark:text-white">{order.total} {t.currency}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

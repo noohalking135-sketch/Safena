@@ -1,40 +1,32 @@
-import { Home, ClipboardList, User, MessageSquareWarning } from "lucide-react";
+import { Bike, Package, MessageSquareWarning, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { TranslationKeys } from "@/lib/i18n";
 
-interface BottomNavProps {
-  page: "home" | "orders" | "account" | "complaints";
-  setPage: (page: "home" | "orders" | "account" | "complaints") => void;
-  t: TranslationKeys;
-}
-
-export function BottomNav({ page, setPage, t }: BottomNavProps) {
-  const items = [
-    { id: "home" as const, label: t.nav.home, icon: Home },
-    { id: "orders" as const, label: t.nav.orders, icon: ClipboardList },
-    { id: "complaints" as const, label: t.nav.complaints, icon: MessageSquareWarning },
-    { id: "account" as const, label: t.nav.account, icon: User },
+export function BottomNav({ page, setPage, t }: any) {
+  const items: { id: any; label: string; icon: React.ElementType }[] = [
+    { id: "home", label: t.navHome, icon: Bike },
+    { id: "orders", label: t.navOrders, icon: Package },
+    { id: "complaints", label: t.navComplaints, icon: MessageSquareWarning },
+    { id: "account", label: t.navAccount, icon: User },
   ];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-40 px-4 pb-4">
-      <div className="mx-auto flex max-w-sm items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white/90 p-2 shadow-lg backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/90">
+    <div className="absolute bottom-0 left-0 right-0 z-[100] border-t border-yellow-200 bg-white/95 backdrop-blur-lg dark:border-slate-700 dark:bg-slate-800/95">
+      <div className="flex items-center justify-around px-2 py-2">
         {items.map((item) => {
-          const Icon = item.icon;
           const isActive = page === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setPage(item.id)}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-all",
-                isActive
-                  ? "bg-amber-400 text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                "flex flex-1 flex-col items-center gap-1 rounded-xl py-2 transition-all",
+                isActive ? "text-yellow-500 dark:text-yellow-400" : "text-slate-400 dark:text-slate-500"
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span className="truncate">{item.label}</span>
+              <div className={cn("flex h-8 w-8 items-center justify-center rounded-full transition-all", isActive && "bg-yellow-100 dark:bg-yellow-900/30")}>
+                <item.icon className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-semibold">{item.label}</span>
             </button>
           );
         })}

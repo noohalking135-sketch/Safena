@@ -1,19 +1,16 @@
 import { Languages } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
-interface LanguageToggleProps {
-  lang: "ar" | "en";
-  setLang: (lang: "ar" | "en") => void;
-}
-
-export function LanguageToggle({ lang, setLang }: LanguageToggleProps) {
+export function LanguageToggle({ lang, setLang }: any) {
   return (
-    <button
+    <Button
+      variant="secondary"
+      size="sm"
+      className="rounded-full bg-white px-3 shadow-sm dark:bg-slate-800"
       onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-      className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm backdrop-blur-sm hover:bg-white dark:bg-slate-800/90 dark:text-white dark:hover:bg-slate-800"
     >
       <Languages className="h-4 w-4" />
-      {lang === "ar" ? "EN" : "ع"}
-    </button>
+      <span className="text-xs font-bold">{lang === "ar" ? "EN" : "ع"}</span>
+    </Button>
   );
 }
