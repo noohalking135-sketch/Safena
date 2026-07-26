@@ -1,3 +1,4 @@
+import './index.css';
 import { useState, useEffect, useRef } from "react";
 import { ShoppingBag } from "lucide-react";
 import { HomePage } from "@/components/HomePage";
@@ -13,11 +14,8 @@ import { FlyingImage } from "@/components/FlyingImage";
 import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-
-// Safe env access to prevent build errors if process is undefined
-const SUPABASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL) || "";
-const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || "";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
@@ -49,34 +47,29 @@ export default function App() {
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-        fetch(`${SUPABASE_URL}/rest/v1/orders?order=created_at.desc`, {
-          headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-              const supabaseOrders = data.map((o: any) => ({
-                id: o.id,
-                status: o.status,
-                total: o.total,
-                date: o.created_at.split('T')[0],
-                items: o.items,
-                location: o.location,
-                timer: o.timer || 300,
-              }));
-              setOrders(prev => {
-                const existingIds = new Set(prev.map(o => o.id));
-                const newOrders = supabaseOrders.filter((o: any) => !existingIds.has(o.id));
-                return [...prev, ...newOrders];
-              });
-            }
-          })
-          .catch(err => console.error("Error fetching orders from Supabase:", err));
-      }
+      supabase.from("orders").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
+        if (error) {
+          console.error("Error fetching orders from Supabase:", error.message);
+          return;
+        }
+        if (data && data.length > 0) {
+          const supabaseOrders = data.map((o: any) => ({
+            id: o.id,
+            status: o.status,
+            total: o.total,
+            date: o.created_at.split('T')[0],
+            items: o.items,
+            location: o.location,
+            timer: o.timer || 300,
+          }));
+          setOrders(prev => {
+            const existingIds = new Set(prev.map(o => o.id));
+            const newOrders = supabaseOrders.filter((o: any) => !existingIds.has(o.id));
+            return [...prev, ...newOrders];
+          });
+        }
+      });
+
     } catch (e) {
       console.error("Failed to load user data", e);
     }
@@ -152,25 +145,19 @@ export default function App() {
         timer: 300,
       };
 
-      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-        await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            id: orderId,
-            user_id: user?.phone,
-            status: "preparing",
-            total,
-            items: cartItems,
-            location,
-            timer: 300,
-            created_at: new Date().toISOString(),
-          }),
-        });
+      const { error } = await supabase.from("orders").insert([{
+        id: orderId,
+        user_id: user?.phone,
+        status: "preparing",
+        total,
+        items: cartItems,
+        location,
+        timer: 300,
+        created_at: new Date().toISOString(),
+      }]);
+
+      if (error) {
+        console.error("Supabase order insert error:", error.message);
       }
 
       setOrders(prev => [newOrder, ...prev]);
@@ -192,8 +179,8 @@ export default function App() {
 
   if (!user) {
     return (
-      <div dir={lang === "ar" ? "rtl" : "ltr"} className={cn("min-h-screen bg-yellow-50", theme === "dark" && "dark bg-slate-950")}>
-        <div className="relative mx-auto h-screen max-w-md overflow-hidden bg-yellow-50 shadow-2xl shadow-yellow-300/20 dark:bg-slate-900 dark:shadow-black/20">
+      <div dir={lang === "ar" ? "rtl" : "ltr"} className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
+        <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
           <div className="absolute end-4 top-4 z-50 flex gap-2">
             <ThemeToggle theme={theme} setTheme={setTheme} />
             <LanguageToggle lang={lang} setLang={setLang} />
@@ -205,8 +192,8 @@ export default function App() {
   }
 
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className={cn("min-h-screen bg-yellow-50", theme === "dark" && "dark bg-slate-950")}>
-      <div className="relative mx-auto h-screen max-w-md overflow-hidden bg-yellow-50 shadow-2xl shadow-yellow-300/20 dark:bg-slate-900 dark:shadow-black/20">
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
+      <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
         
         <div className="absolute end-4 top-4 z-50 flex gap-2">
           <ThemeToggle theme={theme} setTheme={setTheme} />
