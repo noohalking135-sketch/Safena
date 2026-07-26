@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-const SUPABASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL) || "";
-const SUPABASE_ANON_KEY = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || "";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 
 export function ComplaintsPage({ t, user }: any) {
   const [submitted, setSubmitted] = useState(false);
@@ -18,22 +16,25 @@ export function ComplaintsPage({ t, user }: any) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-        await fetch(`${SUPABASE_URL}/rest/v1/complaints`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            user_id: user?.phone,
-            subject,
-            details,
-            status: "pending",
-            created_at: new Date().toISOString(),
-          }),
-        });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/complaints`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify([{
+          user_id: user?.phone,
+          subject,
+          details,
+          status: "pending",
+          created_at: new Date().toISOString(),
+        }]),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Supabase complaint insert error:", errorData.message || errorData);
       }
       
       setSubmitted(true);
