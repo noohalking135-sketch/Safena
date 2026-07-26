@@ -31,13 +31,16 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
     });
 
     try {
-      const res = await fetch(`${APPWRITE_ENDPOINT}/databases/${APPWRITE_DATABASE_ID}/tables/${ORDERS_TABLE_ID}/rows`, {
-        method: "POST",
-        headers: {
+const res = await fetch(`${APPWRITE_ENDPOINT}/databases/${APPWRITE_DATABASE_ID}/collections/${ORDERS_TABLE_ID}/documents`, {
+    method: "POST",
+      headers: {
           'X-Appwrite-Project': APPWRITE_PROJECT_ID,
-          'Content-Type': 'application/json'
-        },
-        body: payload,
+              'Content-Type': 'application/json'
+                },
+                  body: payload,
+                  });
+                  
+})
       });
 
       const responseData = await res.json().catch(() => ({}));
