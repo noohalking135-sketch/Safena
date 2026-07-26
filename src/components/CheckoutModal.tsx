@@ -3,10 +3,10 @@ import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
 import { cn } from "@/lib/utils";
 
-export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: any) {
+export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, cartItems, cartTotal }: any) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [newLocation, setNewLocation] = useState("");
   const [isNew, setIsNew] = useState(false);
@@ -18,39 +18,39 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: 
 
     setIsSubmitting(true);
 
-    const payload = {
-      subject: "New Order",
-      details: `Order to ${location}`,
-      created_at: new Date().toISOString()
-    };
+    const payload = JSON.stringify({
+      rowId: 'unique()',
+      data: {
+        customer_name: user?.name || "عميل",
+        customer_phone: user?.phone || "00000000",
+        total: Number(cartTotal) || 0,
+        items: JSON.stringify(cartItems || []),
+        location: location || "الموقع",
+        status: "قيد التحضير"
+      }
+    });
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+      const res = await fetch(`${APPWRITE_ENDPOINT}/databases/${APPWRITE_DATABASE_ID}/tables/${ORDERS_TABLE_ID}/rows`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          'X-Appwrite-Project': APPWRITE_PROJECT_ID,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify([payload]),
+        body: payload,
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        console.error("Supabase order insert error:", errData.message || errData);
-        // Fallback to local storage
-        const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
-        localOrders.push(payload);
-        localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
-        alert("تم حفظ الطلب محلياً بنجاح");
+      const responseData = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        alert("تم إرسال الطلب بنجاح!");
+      } else {
+        console.error("Appwrite order insert error:", responseData);
+        alert("خطأ من السيرفر: " + JSON.stringify(responseData));
       }
     } catch (error) {
-      console.error("Error submitting order:", error);
-      // Fallback to local storage on network error
-      const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
-      localOrders.push(payload);
-      localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
-      alert("تم حفظ الطلب محلياً بنجاح");
+      console.error("Network error submitting order:", error);
+      alert("Network Error: " + JSON.stringify(error));
     } finally {
       setIsSubmitting(false);
       onConfirm(location);
