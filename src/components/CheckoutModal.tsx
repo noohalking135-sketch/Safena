@@ -46,7 +46,8 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         alert("تم إرسال الطلب بنجاح!");
       } else {
           console.error("Appwrite order insert error:", responseData);
-            alert("خطأ: " + (responseData.message || JSON.stringify(responseData)));
+          alert("خطأ " + res.status + ": " + JSON.stringify(responseData));
+          
             }
       }
       }
