@@ -31,21 +31,24 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: 
           "Content-Type": "application/json",
           "apikey": SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Prefer": "return=minimal"
         },
         body: JSON.stringify([payload]),
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        alert("تم إرسال الطلب بنجاح إلى قاعدة البيانات!");
+      } else {
         const errData = await res.json();
         console.error("Supabase order insert error:", errData.message || errData);
-        // Fallback to local storage
+        // Fallback to local storage if network is offline or RLS blocks
         const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
         localOrders.push(payload);
         localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
         alert("تم حفظ الطلب محلياً بنجاح");
       }
     } catch (error) {
-      console.error("Error submitting order:", error);
+      console.error("Network error submitting order:", error);
       // Fallback to local storage on network error
       const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
       localOrders.push(payload);
