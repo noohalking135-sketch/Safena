@@ -12,50 +12,51 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
   const [isNew, setIsNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleConfirm = async () => {
-    const location = isNew ? newLocation.trim() : selectedLocation;
-    if (!location) return;
+    const handleConfirm = async () => {
+          const location = isNew ? newLocation.trim() : selectedLocation;
+              if (!location) return;
 
-    setIsSubmitting(true);
+                  setIsSubmitting(true);
 
-    const payload = JSON.stringify({
-      documentId: 'unique()',
-      data: {
-        customer_name: user?.name || "عميل",
-        customer_phone: user?.phone || "00000000",
-        total: Number(cartTotal) || 0,
-        items: JSON.stringify(cartItems || []),
-        location: location,
-        status: "قيد التحضير"
-      }
-    });
+                      const payload = JSON.stringify({
+                            documentId: 'unique()',
+                                  data: {
+                                          customer_name: user?.name || "عميل",
+                                                  customer_phone: user?.phone || "00000000",
+                                                          total: Math.round(Number(cartTotal) || 0), // تحويل الرقم إلى صحيح ليطابق الـ integer
+                                                                  items: JSON.stringify(cartItems || []),
+                                                                          location: location,
+                                                                                  status: "قيد التحضير"
+                                                                                        }
+                                                                                            });
 
-    try {
-      const res = await fetch(`${APPWRITE_ENDPOINT}/databases/${APPWRITE_DATABASE_ID}/collections/${ORDERS_TABLE_ID}/documents`, {
-        method: "POST",
-        headers: {
-          'X-Appwrite-Project': APPWRITE_PROJECT_ID,
-          'Content-Type': 'application/json'
-        },
-        body: payload,
-      });
+                                                                                                try {
+                                                                                                      const res = await fetch(`${APPWRITE_ENDPOINT}/databases/${APPWRITE_DATABASE_ID}/collections/${ORDERS_TABLE_ID}/documents`, {
+                                                                                                              method: "POST",
+                                                                                                                      headers: {
+                                                                                                                                'X-Appwrite-Project': APPWRITE_PROJECT_ID,
+                                                                                                                                          'Content-Type': 'application/json'
+                                                                                                                                                  },
+                                                                                                                                                          body: payload,
+                                                                                                                                                                });
 
-      const responseData = await res.json().catch(() => ({}));
+                                                                                                                                                                      const responseData = await res.json().catch(() => ({}));
 
-      if (res.ok) {
-        alert("تم إرسال الطلب بنجاح!");
-      } else {
-        console.error("Appwrite order insert error:", responseData);
-        alert("خطأ " + res.status + ": " + JSON.stringify(responseData));
-      }
-    } catch (error) {
-      console.error("Network error submitting order:", error);
-      alert("Network Error: " + JSON.stringify(error));
-    } finally {
-      setIsSubmitting(false);
-      onConfirm(location);
+                                                                                                                                                                            if (res.ok) {
+                                                                                                                                                                                    alert("تم إرسال الطلب بنجاح!");
+                                                                                                                                                                                          } else {
+                                                                                                                                                                                                  console.error("Appwrite order insert error:", responseData);
+                                                                                                                                                                                                          alert("خطأ " + res.status + ": " + JSON.stringify(responseData));
+                                                                                                                                                                                                                }
+                                                                                                                                                                                                                    } catch (error) {
+                                                                                                                                                                                                                          console.error("Network error submitting order:", error);
+                                                                                                                                                                                                                                alert("Network Error: " + JSON.stringify(error));
+                                                                                                                                                                                                                                    } finally {
+                                                                                                                                                                                                                                          setIsSubmitting(false);
+                                                                                                                                                                                                                                                onConfirm(location);
+                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                      };
     }
-  };
 
   const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim()) || isSubmitting;
 
