@@ -19,7 +19,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
     setIsSubmitting(true);
 
     const payload = JSON.stringify({
-      rowId: 'unique()',
+      documentId: 'unique()',
       data: {
         customer_name: user?.name || "عميل",
         customer_phone: user?.phone || "00000000",
