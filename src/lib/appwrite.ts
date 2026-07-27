@@ -1,12 +1,5 @@
-import { Client, Databases } from "appwrite";
-
-const client = new Client();
-
-client
-    .setEndpoint("https://cloud.appwrite.io/v1")
-    .setProjectId("6a658f7200183d84195b");
-
-export const databases = new Databases(client);
-
-export const DATABASE_ID = "main_db"; 
-export const ORDERS_COLLECTION_ID = "orders";
+export const APPWRITE_ENDPOINT = "https://cloud.appwrite.io/v1";
+export const APPWRITE_PROJECT_ID = "6a658f7200183d84195b";
+export const APPWRITE_DATABASE_ID = "6a65915e00291cf7f54c";
+export const ORDERS_TABLE_ID = "orders";
+export const COMPLAINTS_TABLE_ID = "complaints";
