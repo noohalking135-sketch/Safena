@@ -190,7 +190,7 @@ return (
 
 <div
 className="flex h-full transition-transform duration-300 ease-out"
-style={{ transform: translateX(${translateXValue}%)` }}
+style={{ transform: "translateX(" + translateXValue + "%)" }}
 >
 <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
 <HomePage
