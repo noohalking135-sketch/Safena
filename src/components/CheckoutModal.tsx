@@ -44,7 +44,8 @@ onConfirm(location);
 onClose();
 } catch (error: any) {
 console.error("Appwrite order insert error:", error);
-alert(خطأ من السيرفر: ${error.message || "حدث خطأ غير معروف"});
+alert(`خطأ من السيرفر: ${error.message || "حدث خطأ غير معروف"}`);
+
 } finally {
 setIsSubmitting(false);
 }
