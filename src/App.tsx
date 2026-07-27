@@ -47,33 +47,37 @@ export default function App() {
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      supabase.from("orders").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
-        if (error) {
-          console.error("Error fetching orders from Supabase:", error.message);
-          return;
-        }
-        if (data && data.length > 0) {
-          const supabaseOrders = data.map((o: any) => ({
-            id: o.id,
+      // جلب الطلبات من Appwrite بدلاً من Supabase
+      databases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        ORDERS_TABLE_ID,
+        [Query.orderDesc('$createdAt')]
+      ).then(response => {
+        if (response.documents && response.documents.length > 0) {
+          const appwriteOrders = response.documents.map((o: any) => ({
+            id: o.$id,
             status: o.status,
             total: o.total,
-            date: o.created_at.split('T')[0],
-            items: o.items,
+            date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+            items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
             location: o.location,
-            timer: o.timer || 300,
+            timer: 300,
           }));
           setOrders(prev => {
             const existingIds = new Set(prev.map(o => o.id));
-            const newOrders = supabaseOrders.filter((o: any) => !existingIds.has(o.id));
+            const newOrders = appwriteOrders.filter((o: any) => !existingIds.has(o.id));
             return [...prev, ...newOrders];
           });
         }
+      }).catch(error => {
+        console.error("Error fetching orders from Appwrite:", error);
       });
 
     } catch (e) {
       console.error("Failed to load user data", e);
     }
   }, []);
+
 
   useEffect(() => {
     if (user) localStorage.setItem("noah_user", JSON.stringify(user));
