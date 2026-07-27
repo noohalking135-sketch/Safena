@@ -1,5 +1,14 @@
+import { Client, Databases } from 'appwrite';
+
 export const APPWRITE_ENDPOINT = "https://tor.cloud.appwrite.io/v1";
 export const APPWRITE_PROJECT_ID = "6a658f7200183d84195b";
-export const APPWRITE_DATABASE_ID = "6a65915e00291cf7f54c";
+export const APPWRITE_DATABASE_ID = "main_db"; // تم تعديله ليتطابق مع قاعدة بياناتك main_db في الصور
 export const ORDERS_TABLE_ID = "orders";
 export const COMPLAINTS_TABLE_ID = "complaints";
+
+const client = new Client();
+client
+  .setEndpoint(APPWRITE_ENDPOINT)
+  .setProject(APPWRITE_PROJECT_ID);
+
+export const databases = new Databases(client);
