@@ -14,15 +14,12 @@ import { FlyingImage } from "@/components/FlyingImage";
 import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
+import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
 export type Theme = "light" | "dark";
-
-function getPageIndex(page: Page) {
-  const order: Page[] = ["home", "orders", "complaints", "account"];
-  return order.indexOf(page);
-}
 
 export default function App() {
   const [lang, setLang] = useState<Lang>("ar");
@@ -49,6 +46,30 @@ export default function App() {
       if (savedUser) setUser(JSON.parse(savedUser));
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
+
+      supabase.from("orders").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
+        if (error) {
+          console.error("Error fetching orders from Supabase:", error.message);
+          return;
+        }
+        if (data && data.length > 0) {
+          const supabaseOrders = data.map((o: any) => ({
+            id: o.id,
+            status: o.status,
+            total: o.total,
+            date: o.created_at.split('T')[0],
+            items: o.items,
+            location: o.location,
+            timer: o.timer || 300,
+          }));
+          setOrders(prev => {
+            const existingIds = new Set(prev.map(o => o.id));
+            const newOrders = supabaseOrders.filter((o: any) => !existingIds.has(o.id));
+            return [...prev, ...newOrders];
+          });
+        }
+      });
+
     } catch (e) {
       console.error("Failed to load user data", e);
     }
@@ -69,12 +90,10 @@ export default function App() {
   useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prev => prev.map(order => {
-        if (order.status === "preparing" || order.status === "قيد التحضير") {
-          if (order.timer > 0) {
-            return { ...order, timer: order.timer - 1 };
-          } else {
-            return { ...order, status: "onWay" };
-          }
+        if (order.status === "preparing" && order.timer > 0) {
+          return { ...order, timer: order.timer - 1 };
+        } else if (order.status === "preparing" && order.timer === 0) {
+          return { ...order, status: "onWay" };
         }
         return order;
       }));
@@ -114,7 +133,7 @@ export default function App() {
     
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
-    const orderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrder = {
       id: orderId,
       status: "قيد التحضير",
@@ -170,7 +189,7 @@ export default function App() {
 
         <div 
           className="flex h-full transition-transform duration-300 ease-out"
-          style={{ transform: "translateX(" + translateXValue + "%)" }}
+          style={{ transform: `translateX(${translateXValue}%)` }}
         >
           <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
             <HomePage 
@@ -235,4 +254,9 @@ export default function App() {
       </div>
     </div>
   );
-} //
+}
+
+function getPageIndex(page: Page) {
+  const order: Page[] = ["home", "orders", "complaints", "account"];
+  return order.indexOf(page);
+}
