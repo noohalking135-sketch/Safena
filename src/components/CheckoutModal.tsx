@@ -3,149 +3,142 @@ import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+// استيراد إعدادات قاعدة بيانات Appwrite
+import { databases, DATABASE_ID, ORDERS_COLLECTION_ID } from "@/lib/appwrite";
+import { ID } from "appwrite";
 
-export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm }: any) {
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [newLocation, setNewLocation] = useState("");
-  const [isNew, setIsNew] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function CheckoutModal({ t, lang, user, addresses, cartItems = [], totalAmount = 0, onClose, onConfirm }: any) {
+const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+const [newLocation, setNewLocation] = useState("");
+const [isNew, setIsNew] = useState(false);
+const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleConfirm = async () => {
-    const location = isNew ? newLocation.trim() : selectedLocation;
-    if (!location) return;
+const handleConfirm = async () => {
+const location = isNew ? newLocation.trim() : selectedLocation;
+if (!location) return;
 
-    setIsSubmitting(true);
+setIsSubmitting(true);
 
-    const payload = {
-      subject: "New Order",
-      details: `Order to ${location}`,
-      created_at: new Date().toISOString()
-    };
+// تجهيز البيانات لتتطابق تماماً مع أعمدة جدول orders في Appwrite
+const orderPayload = {
+customer_name: user?.name || "Customer",
+customer_phone: user?.phone || "0000000000",
+items: JSON.stringify(cartItems), // تخزين المنتجات كـ JSON نصي
+location: location,
+status: "pending",
+total: Math.round(Number(totalAmount) || 0), // رقم صحيح يتوافق مع نوع integer في جدول orders
+};
 
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify([payload]),
-      });
+try {
+// إرسال البيانات مباشرة إلى Appwrite
+await databases.createDocument(
+DATABASE_ID,
+ORDERS_COLLECTION_ID,
+ID.unique(),
+orderPayload
+);
 
-      if (!res.ok) {
-        const errData = await res.json();
-        console.error("Supabase order insert error:", errData.message || errData);
-        // Fallback to local storage
-        const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
-        localOrders.push(payload);
-        localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
-        alert("تم حفظ الطلب محلياً بنجاح");
-      }
-    } catch (error) {
-      console.error("Error submitting order:", error);
-      // Fallback to local storage on network error
-      const localOrders = JSON.parse(localStorage.getItem("noah_local_orders") || "[]");
-      localOrders.push(payload);
-      localStorage.setItem("noah_local_orders", JSON.stringify(localOrders));
-      alert("تم حفظ الطلب محلياً بنجاح");
-    } finally {
-      setIsSubmitting(false);
-      onConfirm(location);
-    }
-  };
+alert("تم إرسال الطلب بنجاح!");
+onConfirm(location);
+onClose();
+} catch (error: any) {
+console.error("Appwrite order insert error:", error);
+alert(خطأ من السيرفر: ${error.message || "حدث خطأ غير معروف"});
+} finally {
+setIsSubmitting(false);
+}
+};
 
-  const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim()) || isSubmitting;
+const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim()) || isSubmitting;
 
-  return (
-    <div className="absolute inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm">
-      <Card className="flex max-h-[85vh] w-full flex-col rounded-t-3xl border-yellow-200 p-0 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
-        <CardHeader className="flex flex-row items-center justify-between p-4">
-          <Button 
-            onClick={handleConfirm}
-            disabled={isDisabled}
-            className="rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition-transform hover:scale-105 hover:bg-yellow-500 disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <Send className="mx-1 h-4 w-4" />
-            {t.sendOrder}
-          </Button>
-          <CardTitle className="text-lg font-bold text-slate-800 dark:text-white">{t.selectLocation}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
-            <X className="h-5 w-5" />
-          </Button>
-        </CardHeader>
-        
-        <CardContent className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
-          <div className="flex gap-2 rounded-full bg-yellow-50 p-1 dark:bg-slate-700">
-            <button 
-              className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", !isNew ? "bg-yellow-400 text-slate-800" : "text-slate-500")}
-              onClick={() => setIsNew(false)}
-            >
-              {t.savedLocations}
-            </button>
-            <button 
-              className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", isNew ? "bg-yellow-400 text-slate-800" : "text-slate-500")}
-              onClick={() => setIsNew(true)}
-            >
-              {t.newLocation}
-            </button>
-          </div>
+return (
+<div className="absolute inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm">
+<Card className="flex max-h-[85vh] w-full flex-col rounded-t-3xl border-yellow-200 p-0 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+<CardHeader className="flex flex-row items-center justify-between p-4">
+<Button
+onClick={handleConfirm}
+disabled={isDisabled}
+className="rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition-transform hover:scale-105 hover:bg-yellow-500 disabled:opacity-50 disabled:hover:scale-100"
+>
+<Send className="mx-1 h-4 w-4" />
+{t.sendOrder}
+</Button>
+<CardTitle className="text-lg font-bold text-slate-800 dark:text-white">{t.selectLocation}</CardTitle>
+<Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+<X className="h-5 w-5" />
+</Button>
+</CardHeader>
 
-          {!isNew ? (
-            <div className="flex flex-col gap-2">
-              {addresses.length === 0 ? (
-                <p className="text-center text-sm text-slate-400">{t.noAddresses}</p>
-              ) : (
-                addresses.map((addr: any) => (
-                  <button
-                    key={addr.id}
-                    onClick={() => setSelectedLocation(addr.details)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl border-2 p-3 text-start transition-all",
-                      selectedLocation === addr.details ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "border-transparent bg-white dark:bg-slate-700"
-                    )}
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-slate-600">
-                      {addr.label.includes(t.home) || addr.label.toLowerCase().includes("home") ? <Home className="h-5 w-5 text-yellow-600" /> : <Briefcase className="h-5 w-5 text-yellow-600" />}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 dark:text-white">{addr.label}</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{addr.details}</p>
-                    </div>
-                    {selectedLocation === addr.details && <CheckCircle2 className="ms-auto h-5 w-5 text-yellow-500" />}
-                  </button>
-                ))
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <Textarea 
-                value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                placeholder={t.addressDetails}
-                rows={4}
-                className="rounded-xl dark:border-slate-600 dark:bg-slate-700"
-              />
-              <Button variant="outline" className="flex items-center justify-center gap-2 rounded-xl border-yellow-200 text-yellow-600">
-                <Navigation className="h-4 w-4" /> تحديد على الخريطة
-              </Button>
-            </div>
-          )}
-        </CardContent>
+<CardContent className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
+<div className="flex gap-2 rounded-full bg-yellow-50 p-1 dark:bg-slate-700">
+<button
+className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", !isNew ? "bg-yellow-400 text-slate-800" : "text-slate-500")}
+onClick={() => setIsNew(false)}
+>
+{t.savedLocations}
+</button>
+<button
+className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", isNew ? "bg-yellow-400 text-slate-800" : "text-slate-500")}
+onClick={() => setIsNew(true)}
+>
+{t.newLocation}
+</button>
+</div>
 
-        <CardFooter className="sticky bottom-0 z-[999] border-t border-yellow-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-          <Button 
-            onClick={handleConfirm}
-            disabled={isDisabled}
-            className="w-full rounded-full bg-yellow-400 py-6 text-base font-bold text-slate-800 shadow-md transition-transform hover:scale-[1.02] hover:bg-yellow-500 disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <Send className="mx-2 h-5 w-5" />
-            {t.confirmAndSend}
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
-  );
+{!isNew ? (
+<div className="flex flex-col gap-2">
+{addresses.length === 0 ? (
+<p className="text-center text-sm text-slate-400">{t.noAddresses}</p>
+) : (
+addresses.map((addr: any) => (
+<button
+key={addr.id}
+onClick={() => setSelectedLocation(addr.details)}
+className={cn(
+"flex items-center gap-3 rounded-xl border-2 p-3 text-start transition-all",
+selectedLocation === addr.details ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "border-transparent bg-white dark:bg-slate-700"
+)}
+>
+<div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-slate-600">
+{addr.label.includes(t.home) || addr.label.toLowerCase().includes("home") ? <Home className="h-5 w-5 text-yellow-600" /> : <Briefcase className="h-5 w-5 text-yellow-600" />}
+</div>
+<div>
+<h3 className="font-bold text-slate-800 dark:text-white">{addr.label}</h3>
+<p className="text-xs text-slate-500 dark:text-slate-400">{addr.details}</p>
+</div>
+{selectedLocation === addr.details && <CheckCircle2 className="ms-auto h-5 w-5 text-yellow-500" />}
+</button>
+))
+)}
+</div>
+) : (
+<div className="flex flex-col gap-2">
+<Textarea
+value={newLocation}
+onChange={(e) => setNewLocation(e.target.value)}
+placeholder={t.addressDetails}
+rows={4}
+className="rounded-xl dark:border-slate-600 dark:bg-slate-700"
+/>
+<Button variant="outline" className="flex items-center justify-center gap-2 rounded-xl border-yellow-200 text-yellow-600">
+<Navigation className="h-4 w-4" /> تحديد على الخريطة
+</Button>
+</div>
+)}
+</CardContent>
+
+<CardFooter className="sticky bottom-0 z-[999] border-t border-yellow-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+<Button
+onClick={handleConfirm}
+disabled={isDisabled}
+className="w-full rounded-full bg-yellow-400 py-6 text-base font-bold text-slate-800 shadow-md transition-transform hover:scale-[1.02] hover:bg-yellow-500 disabled:opacity-50 disabled:hover:scale-100"
+>
+<Send className="mx-2 h-5 w-5" />
+{t.confirmAndSend}
+</Button>
+</CardFooter>
+</Card>
+</div>
+);
 }
