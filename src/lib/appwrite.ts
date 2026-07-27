@@ -1,5 +1,14 @@
-export const APPWRITE_ENDPOINT = "https://cloud.appwrite.io/v1";
-export const APPWRITE_PROJECT_ID = "6a658f7200183d84195b";
-export const APPWRITE_DATABASE_ID = "6a65915e00291cf7f54c";
-export const ORDERS_TABLE_ID = "orders";
-export const COMPLAINTS_TABLE_ID = "complaints";
+import { Client, Databases } from "appwrite";
+
+// إعداد الاتصال الأساسي مع Appwrite
+const client = new Client();
+
+client
+.setEndpoint("https://cloud.appwrite.io/v1") // ضع رابط خادم Appwrite الخاص بك إذا كان مختلفاً
+.setProjectId("YOUR_PROJECT_ID"); // استبدل هذا بمعرف مشروعك في Appwrite
+
+export const databases = new Databases(client);
+
+// معرّفات قاعدة البيانات والجداول الخاصة بك
+export const DATABASE_ID = "main_db"; // اسم أو معرف قاعدة البيانات لديك
+export const ORDERS_COLLECTION_ID = "orders"; // معرف جدول الطلبات
