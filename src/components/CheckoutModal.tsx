@@ -45,8 +45,8 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
       if (res.ok) {
         alert("تم إرسال الطلب بنجاح!");
       } else {
-        console.error("Appwrite order insert error:", responseData);
-        alert("خطأ من السيرفر: " + JSON.stringify(responseData));
+              console.error("Appwrite order insert error:", responseData);
+      alert("خطأ من السيرفر: " + (responseData.message || JSON.stringify(responseData)));
       }
     } catch (error) {
       console.error("Network error submitting order:", error);
