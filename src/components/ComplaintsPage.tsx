@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
+import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_DATABASE_ID, COMPLAINTS_TABLE_ID } from "@/lib/appwrite";
 
 export function ComplaintsPage({ t, user }: any) {
   const [submitted, setSubmitted] = useState(false);
@@ -16,46 +16,42 @@ export function ComplaintsPage({ t, user }: any) {
     e.preventDefault();
     setSubmitting(true);
 
-    const payload = {
-      subject: subject,
-      details: details,
-      created_at: new Date().toISOString()
-    };
+    const payload = JSON.stringify({
+      rowId: 'unique()',
+      data: {
+        customer_name: user?.name || "عميل",
+        customer_phone: user?.phone || "00000000",
+        subject: subject,
+        details: details,
+        status: "جديد"
+      }
+    });
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/complaints`, {
+      const res = await fetch(`${APPWRITE_ENDPOINT}/databases/${APPWRITE_DATABASE_ID}/tables/${COMPLAINTS_TABLE_ID}/rows`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          'X-Appwrite-Project': APPWRITE_PROJECT_ID,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify([payload]),
+        body: payload,
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        console.error("Supabase complaint insert error:", errData.message || errData);
-        // Fallback to local storage
-        const localComplaints = JSON.parse(localStorage.getItem("noah_local_complaints") || "[]");
-        localComplaints.push(payload);
-        localStorage.setItem("noah_local_complaints", JSON.stringify(localComplaints));
-        alert("تم إرسال الشكوى بنجاح");
+      const responseData = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        alert("تم إرسال الشكوى بنجاح!");
+        setSubmitted(true);
+        setSubject("");
+        setDetails("");
+        setTimeout(() => setSubmitted(false), 4000);
       } else {
-        alert("تم إرسال الشكوى بنجاح");
+        console.error("Appwrite complaint insert error:", responseData);
+        alert("خطأ من السيرفر: " + JSON.stringify(responseData));
       }
-      
-      setSubmitted(true);
-      setSubject("");
-      setDetails("");
-      setTimeout(() => setSubmitted(false), 4000);
     } catch (error) {
-      console.error("Error submitting complaint:", error);
-      // Fallback to local storage on network error
-      const localComplaints = JSON.parse(localStorage.getItem("noah_local_complaints") || "[]");
-      localComplaints.push(payload);
-      localStorage.setItem("noah_local_complaints", JSON.stringify(localComplaints));
-      alert("تم إرسال الشكوى بنجاح");
+      console.error("Network error submitting complaint:", error);
+      alert("Network Error: " + JSON.stringify(error));
     } finally {
       setSubmitting(false);
     }
