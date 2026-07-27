@@ -14,7 +14,8 @@ import { FlyingImage } from "@/components/FlyingImage";
 import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
-import { supabase } from "@/lib/supabase";
+import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
+import { Query } from "appwrite";
 import { cn } from "@/lib/utils";
 
 export type Lang = "ar" | "en";
@@ -47,7 +48,7 @@ export default function App() {
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      // جلب الطلبات من Appwrite بدلاً من Supabase
+      // جلب الطلبات من Appwrite
       databases.listDocuments(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
@@ -77,7 +78,6 @@ export default function App() {
       console.error("Failed to load user data", e);
     }
   }, []);
-
 
   useEffect(() => {
     if (user) localStorage.setItem("noah_user", JSON.stringify(user));
