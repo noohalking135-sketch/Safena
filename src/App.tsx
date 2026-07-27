@@ -49,13 +49,13 @@ if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
 if (savedOrders) setOrders(JSON.parse(savedOrders));
 
 databases.listDocuments(DATABASE_ID, ORDERS_COLLECTION_ID, [
-Query.orderDesc("latex
-createdAt") ]).then((response) =&gt; { if (response.documents && response.documents.length &gt; 0) { const appwriteOrders = response.documents.map((o: any) =&gt; ({ id: o.orderId || o.
+Query.orderDesc("createdAt")
+ ]).then((response) => {
+if (response.documents && response.documents.length > 0) {
+const appwriteOrders = response.documents.map((o: any) => ({
+id: o.orderId || o.
 
-id,
-status: o.status || "قيد التحضير",
-total: o.total,
-date: o.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+createdAt ? o.$`createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
 items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
 location: o.location,
 timer: o.timer || 300,
@@ -191,7 +191,7 @@ return (
 
 <div
 className="flex h-full transition-transform duration-300 ease-out"
-style={{ transform: translateX(${translateXValue}%)` }}
+style={{ transform: translateX(${translateXValue}%) }}
 >
 <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
 <HomePage
