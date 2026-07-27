@@ -9,4 +9,4 @@ client
 export const databases = new Databases(client);
 
 export const DATABASE_ID = "main_db"; 
-export const ORDERS_COLLECTION_ID = "orders"; //
+export const ORDERS_COLLECTION_ID = "orders";
