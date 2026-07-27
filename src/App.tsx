@@ -48,7 +48,6 @@ if (savedUser) setUser(JSON.parse(savedUser));
 if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
 if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-// جلب الطلبات من Appwrite بدلاً من Supabase لتجنب الشاشة البيضاء
 databases.listDocuments(DATABASE_ID, ORDERS_COLLECTION_ID, [
 Query.orderDesc("latex
 createdAt") ]).then((response) =&gt; { if (response.documents && response.documents.length &gt; 0) { const appwriteOrders = response.documents.map((o: any) =&gt; ({ id: o.orderId || o.
