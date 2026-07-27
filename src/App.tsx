@@ -260,3 +260,4 @@ onComplete={() => setFlyingImages(prev => prev.filter(i => i.id !== img.id))}
 function getPageIndex(page: Page) {
 const order: Page[] = ["home", "orders", "complaints", "account"];
 return order.indexOf(page);
+ 
