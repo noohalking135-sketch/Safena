@@ -54,7 +54,7 @@ if (response.documents && response.documents.length > 0) {
 const appwriteOrders = response.documents.map((o: any) => ({
 id: o.orderId || o.
 
-createdAt ? o.$`createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
 items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
 location: o.location,
 timer: o.timer || 300,
@@ -260,4 +260,4 @@ onComplete={() => setFlyingImages(prev => prev.filter(i => i.id !== img.id))}
 function getPageIndex(page: Page) {
 const order: Page[] = ["home", "orders", "complaints", "account"];
 return order.indexOf(page);
- 
+}
