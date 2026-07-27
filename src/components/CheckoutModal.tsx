@@ -24,7 +24,11 @@ setIsSubmitting(true);
         customer_name: user?.name || "عميل",
         customer_phone: user?.phone || "00000000",
         total: Number(cartTotal) || 0,
-        items: cartItems.map((item: any) => item.name?.ar || item.name || item.title).join(' / '),
+        items: (cartItems || []).map((item: any) => {
+  const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
+  const qty = item.quantity ? ` (${item.quantity})` : '';
+  return `${nameVal}${qty}`;
+}).filter(Boolean).join(' / '),
         location: location || "الموقع",
         status: "قيد التحضير"
       }
