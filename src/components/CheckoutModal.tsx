@@ -24,7 +24,7 @@ setIsSubmitting(true);
         customer_name: user?.name || "عميل",
         customer_phone: user?.phone || "00000000",
         total: Number(cartTotal) || 0,
-        items: JSON.stringify(cartItems || []),
+        items: cartItems.map((item: any) => item.name?.ar || item.name || item.title).join(' / '),
         location: location || "الموقع",
         status: "قيد التحضير"
       }
