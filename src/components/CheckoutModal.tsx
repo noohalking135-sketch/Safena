@@ -18,7 +18,6 @@ if (!location) return;
 
 setIsSubmitting(true);
 
-const payload = JSON.stringify({
     const payload = JSON.stringify({
       documentId: 'unique()',
       data: {
