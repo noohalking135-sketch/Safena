@@ -135,7 +135,7 @@ return { name: product.name, qty, price: product.price };
 
 const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
-const orderId = ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
 const newOrder = {
 id: orderId,
 status: "قيد التحضير",
