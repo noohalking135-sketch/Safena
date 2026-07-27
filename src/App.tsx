@@ -16,7 +16,6 @@ import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
 import { databases, DATABASE_ID, ORDERS_COLLECTION_ID } from "@/lib/appwrite";
 import { Query } from "appwrite";
-import { cn } from "@/lib/utils";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
@@ -191,7 +190,7 @@ return (
 
 <div
 className="flex h-full transition-transform duration-300 ease-out"
-style={{ transform: translateX(${translateXValue}%) }}
+style={{ transform: translateX(${translateXValue}%)` }}
 >
 <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
 <HomePage
