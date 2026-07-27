@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_DATABASE_ID, COMPLAINTS_TABLE_ID } from "@/lib/appwrite";
+import { databases, APPWRITE_DATABASE_ID, COMPLAINTS_TABLE_ID } from "@/lib/appwrite";
+import { ID } from "appwrite";
 
 export function ComplaintsPage({ t, user }: any) {
   const [submitted, setSubmitted] = useState(false);
@@ -16,42 +17,30 @@ export function ComplaintsPage({ t, user }: any) {
     e.preventDefault();
     setSubmitting(true);
 
-    const payload = JSON.stringify({
-      rowId: 'unique()',
-      data: {
-        customer_name: user?.name || "عميل",
-        customer_phone: user?.phone || "00000000",
-        subject: subject,
-        details: details,
-        status: "جديد"
-      }
-    });
-
     try {
-      const res = await fetch(`${APPWRITE_ENDPOINT}/databases/${APPWRITE_DATABASE_ID}/tables/${COMPLAINTS_TABLE_ID}/rows`, {
-        method: "POST",
-        headers: {
-          'X-Appwrite-Project': APPWRITE_PROJECT_ID,
-          'Content-Type': 'application/json'
-        },
-        body: payload,
-      });
+      // استخدام مكتبة Appwrite الرسمية لإنشاء المستند بطريقة صحيحة
+      await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        COMPLAINTS_TABLE_ID,
+        ID.unique(),
+        {
+          customer_name: user?.name || "عميل",
+          customer_phone: user?.phone || "00000000",
+          subject: subject,
+          details: details,
+          status: "جديد"
+        }
+      );
 
-      const responseData = await res.json().catch(() => ({}));
+      alert("تم إرسال الشكوى بنجاح!");
+      setSubmitted(true);
+      setSubject("");
+      setDetails("");
+      setTimeout(() => setSubmitted(false), 4000);
 
-      if (res.ok) {
-        alert("تم إرسال الشكوى بنجاح!");
-        setSubmitted(true);
-        setSubject("");
-        setDetails("");
-        setTimeout(() => setSubmitted(false), 4000);
-      } else {
-        console.error("Appwrite complaint insert error:", responseData);
-        alert("خطأ من السيرفر: " + JSON.stringify(responseData));
-      }
-    } catch (error) {
-      console.error("Network error submitting complaint:", error);
-      alert("Network Error: " + JSON.stringify(error));
+    } catch (error: any) {
+      console.error("Appwrite complaint insert error:", error);
+      alert("خطأ من السيرفر: " + (error.message || JSON.stringify(error)));
     } finally {
       setSubmitting(false);
     }
