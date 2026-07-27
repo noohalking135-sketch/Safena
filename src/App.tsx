@@ -1,4 +1,4 @@
- import './index.css';
+import './index.css';
 import { useState, useEffect, useRef } from "react";
 import { ShoppingBag } from "lucide-react";
 import { HomePage } from "@/components/HomePage";
@@ -14,14 +14,11 @@ import { FlyingImage } from "@/components/FlyingImage";
 import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
-import { databases, DATABASE_ID, ORDERS_COLLECTION_ID } from "@/lib/appwrite";
-import { Query } from "appwrite";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
 export type Theme = "light" | "dark";
 
-// تم نقل دالة تحديد الصفحة إلى هنا في الأعلى لضمان عملها بشكل سليم
 function getPageIndex(page: Page) {
   const order: Page[] = ["home", "orders", "complaints", "account"];
   return order.indexOf(page);
@@ -52,33 +49,6 @@ export default function App() {
       if (savedUser) setUser(JSON.parse(savedUser));
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
-
-      // تم تعطيل استدعاء Appwrite مؤقتاً لمنع الشاشة البيضاء حتى تجهز قاعدة البيانات الخاصة بك
-      /*
-      databases.listDocuments(DATABASE_ID, ORDERS_COLLECTION_ID, [
-        Query.orderDesc("createdAt")
-      ]).then((response) => {
-        if (response.documents && response.documents.length > 0) {
-          const appwriteOrders = response.documents.map((o: any) => ({
-            id: o.orderId || o.$id,
-            status: o.status || "قيد التحضير",
-            total: o.total,
-            date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-            items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
-            location: o.location,
-            timer: o.timer || 300,
-          }));
-          setOrders(prev => {
-            const existingIds = new Set(prev.map(o => o.id));
-            const newOrders = appwriteOrders.filter((o: any) => !existingIds.has(o.id));
-            return [...prev, ...newOrders];
-          });
-        }
-      }).catch((error) => {
-        console.error("Error fetching orders from Appwrite:", error);
-      });
-      */
-
     } catch (e) {
       console.error("Failed to load user data", e);
     }
@@ -266,4 +236,3 @@ export default function App() {
     </div>
   );
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
