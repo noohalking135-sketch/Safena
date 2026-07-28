@@ -48,27 +48,38 @@ export function ComplaintsPage({ t, user }: any) {
 
   return (
     <div className="flex flex-col gap-4 p-4 pt-12">
-      <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.complaints}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.complaints}</h1>
       {submitted ? (
         <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
           <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
             <CheckCircle2 className="h-12 w-12 text-green-500" />
-            <p className="font-semibold text-green-700 dark:text-green-400">{t.complaintSubmitted}</p>
+            <p className="font-semibold text-green-800 dark:text-green-400">{t.complaintSubmitted}</p>
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-yellow-100 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <Card className="border-yellow-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <CardContent className="p-4">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t.complaintSubject}</label>
-                <Input value={subject} onChange={(e) => setSubject(e.target.value)} required className="rounded-xl dark:border-slate-600 dark:bg-slate-700" />
+                <label className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t.complaintSubject}</label>
+                <Input 
+                  value={subject} 
+                  onChange={(e) => setSubject(e.target.value)} 
+                  required 
+                  className="rounded-xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-700 dark:text-white" 
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t.complaintDetails}</label>
-                <Textarea value={details} onChange={(e) => setDetails(e.target.value)} required rows={4} className="rounded-xl dark:border-slate-600 dark:bg-slate-700" />
+                <label className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t.complaintDetails}</label>
+                <Textarea 
+                  value={details} 
+                  onChange={(e) => setDetails(e.target.value)} 
+                  required 
+                  rows={4} 
+                  className="rounded-xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-700 dark:text-white" 
+                />
               </div>
-              <Button type="submit" disabled={submitting} className="rounded-full bg-yellow-400 text-slate-800 hover:bg-yellow-500 disabled:opacity-50">
+              <Button type="submit" disabled={submitting} className="rounded-full bg-yellow-400 text-slate-900 hover:bg-yellow-500 disabled:opacity-50 font-semibold">
                 {submitting ? t.submitting : t.submitComplaint}
               </Button>
             </form>
