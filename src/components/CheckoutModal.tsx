@@ -18,7 +18,8 @@ if (!location) return;
 
 setIsSubmitting(true);
 
-        const payload = JSON.stringify({
+            const payload = JSON.stringify({
+      documentId: 'unique()',
       data: {
         customer_name: user?.name || "عميل",
         customer_phone: user?.phone || "00000000",
