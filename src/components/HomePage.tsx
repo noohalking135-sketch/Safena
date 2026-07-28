@@ -34,14 +34,17 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
   const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
   return (
-    <div className="flex flex-col gap-6 p-4 pt-12">
-      <      <header className="flex flex-col items-center gap-2 mb-2">
+    <div className="flex flex-col gap-6 p-4 pt-4">
+      {/* هيدر يحتوي على الشعار في الزاوية ووصف التطبيق */}
+      <header className="flex items-center justify-between pt-2">
+        <div className="flex flex-col">
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
+        </div>
         <img 
           src="/logo.png" 
-          alt="سفينة نوح لتوصيل الطلبات" 
-          className="h-20 w-auto object-contain drop-shadow-sm" 
+          alt="سفينة نوح" 
+          className="h-14 w-auto object-contain drop-shadow-sm" 
         />
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
       </header>
 
       <div className="relative">
@@ -89,7 +92,6 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                     <span className="font-bold text-yellow-600 dark:text-yellow-400 text-sm">{product.price} {t.currency}</span>
                     {cart[product.id] ? (
                       <div className="flex items-center gap-1">
-                        {/* تم تغيير زر الناقص هنا ليصبح أحمر وواضح في الوضعين */}
                         <Button size="icon" variant="outline" className="h-7 w-7 rounded-full border-red-200 bg-red-50 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400" onClick={() => removeFromCart(product.id)}>
                           <Minus className="h-3 w-3" />
                         </Button>
