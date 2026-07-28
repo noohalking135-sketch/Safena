@@ -15,10 +15,14 @@ export function CustomOrderForm({ t, lang, onAdd, onClose }: any) {
 
     onAdd({
       id: Date.now(),
-      // نرسل محتوى التفاصيل مباشرة ليكون هو اسم أو محتوى الطلب (items)
-      name: { [lang]: details.trim() },
+      // الحفاظ على هيكل الـ name ككائن لغوي لكي لا يحدث خطأ في باقي التطبيق
+      name: { 
+        ar: details.trim(),
+        en: details.trim(),
+        [lang]: details.trim() 
+      },
       price: Number(price) || 0,
-      qty: 1, // تثبيت الكمية على 1 لكي لا تظهر أرقام أو خانات زائدة
+      qty: 1,
       image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80",
       isCustom: true,
     });
@@ -38,7 +42,6 @@ export function CustomOrderForm({ t, lang, onAdd, onClose }: any) {
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* تم إلغاء حقل اسم المنتج والاعتماد على التفاصيل فقط */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">التفاصيل والوصف</label>
             <Textarea 
@@ -51,7 +54,6 @@ export function CustomOrderForm({ t, lang, onAdd, onClose }: any) {
             />
           </div>
 
-          {/* السعر المتوقع فقط (بدون خانة الكمية) */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t.customOrderPrice} (اختياري)</label>
             <Input 
@@ -72,4 +74,3 @@ export function CustomOrderForm({ t, lang, onAdd, onClose }: any) {
     </Card>
   );
 }
- 
