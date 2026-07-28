@@ -42,7 +42,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-        <Input placeholder={t.searchPlaceholder} className="rounded-xl border-yellow-200 bg-white py-6 pl-10 shadow-sm dark:border-slate-700 dark:bg-slate-800" />
+        <Input placeholder={t.searchPlaceholder} className="rounded-xl border-yellow-200 bg-white py-6 pl-10 text-slate-800 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -74,7 +74,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">{activeCategory ? t.categories : t.popular}</h2>
         <div className="grid grid-cols-2 gap-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden border-none shadow-md">
+            <Card key={product.id} className="overflow-hidden border-none bg-white shadow-md dark:bg-slate-800">
               <CardContent className="p-0">
                 <div className="relative h-32 w-full overflow-hidden">
                   <img src={product.image} alt={product.name[lang]} className="h-full w-full object-cover" />
@@ -85,10 +85,11 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                     <span className="font-bold text-yellow-600 dark:text-yellow-400 text-sm">{product.price} {t.currency}</span>
                     {cart[product.id] ? (
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="outline" className="h-7 w-7 rounded-full p-0" onClick={() => removeFromCart(product.id)}>
+                        {/* تم تغيير زر الناقص هنا ليصبح أحمر وواضح في الوضعين */}
+                        <Button size="icon" variant="outline" className="h-7 w-7 rounded-full border-red-200 bg-red-50 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400" onClick={() => removeFromCart(product.id)}>
                           <Minus className="h-3 w-3" />
                         </Button>
-                        <span className="w-4 text-center text-sm font-bold">{cart[product.id]}</span>
+                        <span className="w-4 text-center text-sm font-bold text-slate-800 dark:text-white">{cart[product.id]}</span>
                         <Button 
                           size="icon" 
                           className="h-7 w-7 rounded-full bg-yellow-400 p-0 text-slate-800 hover:bg-yellow-500" 
