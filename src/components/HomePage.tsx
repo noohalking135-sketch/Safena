@@ -35,8 +35,12 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
 
   return (
     <div className="flex flex-col gap-6 p-4 pt-12">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.appName} <span className="text-yellow-500">.</span></h1>
+      <      <header className="flex flex-col items-center gap-2 mb-2">
+        <img 
+          src="/logo.png" 
+          alt="سفينة نوح لتوصيل الطلبات" 
+          className="h-20 w-auto object-contain drop-shadow-sm" 
+        />
         <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
       </header>
 
