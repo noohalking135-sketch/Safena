@@ -18,13 +18,12 @@ if (!location) return;
 
 setIsSubmitting(true);
 
-    const payload = JSON.stringify({
-      documentId: 'unique()',
+        const payload = JSON.stringify({
       data: {
         customer_name: user?.name || "عميل",
         customer_phone: user?.phone || "00000000",
         total: Number(cartTotal) || 0,
-                items: (cartItems || []).map((item: any) => {
+        items: (cartItems || []).map((item: any) => {
           const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
           const qty = item.quantity ? ` x${item.quantity}` : ' x1';
           return `${nameVal}${qty}`;
