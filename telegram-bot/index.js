@@ -9,39 +9,13 @@ module.exports = async ({ req, res, log, error }) => {
       payload = req.payload;
     }
 
-    log("Incoming Payload: " + JSON.stringify(payload));
+    log("Direct Payload Received: " + JSON.stringify(payload));
 
-    let data = payload.document || payload.current || payload.data || payload;
-
-    // إذا وصل الـ payload فارغاً، نقوم بجلب أحدث سجل أُضيف لقاعدة البيانات تلقائياً
-    if (!data || Object.keys(data).length === 0 || (!data.customer_name && !data.items && !data.customer)) {
-      log("Payload is empty. Fetching the latest document from database...");
-      
-      const PROJECT_ID = '6a658f7200183d84195b';
-      const DATABASE_ID = '6a65915e00291cf7f54c';
-      
-      try {
-        const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderDesc(\$createdAt)=true`, {
-          headers: {
-            'X-Appwrite-Project': PROJECT_ID,
-            'Content-Type': 'application/json'
-          }
-        });
-        const dbResult = await dbResponse.json();
-        if (dbResult.documents && dbResult.documents.length > 0) {
-          data = dbResult.documents[0];
-          log("Successfully fetched latest order from DB.");
-        }
-      } catch (dbErr) {
-        error("خطأ في جلب أحدث سجل: " + dbErr.message);
-      }
-    }
-
-    const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
-    const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
-    const location = data.location || data.address || data.homeAddress || "غير محدد";
-    const items = data.items || data.details || data.subject || "لا توجد تفاصيل";
-    const total = data.total !== undefined && data.total !== null ? `💰 *المجموع:* ${data.total} ل.س` : "";
+    const customerName = payload.customer_name || "عميل جديد";
+    const customerPhone = payload.customer_phone || "غير محدد";
+    const location = payload.location || "غير محدد";
+    const items = payload.items || "لا توجد تفاصيل";
+    const total = payload.total !== undefined && payload.total !== null ? `💰 *المجموع:* ${payload.total} ل.س` : "";
 
     const message = `🚨 *طلب أو شكوى جديدة عبر التطبيق!*\n\n` +
                     `👤 *العميل:* ${customerName}\n` +
