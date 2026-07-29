@@ -247,7 +247,7 @@ function HelpView({ t, onBack }: any) {
           </div>
           <p className="text-slate-700 dark:text-slate-300">{t.whatsappSupport}</p>
           <p className="text-2xl font-bold text-slate-900 dark:text-white" dir="ltr">{t.whatsappNumber}</p>
-          <a href="https://wa.me/962959213962" target="_blank" rel="noopener noreferrer" className="w-full">
+          <a href="https://wa.me/963959213962" target="_blank" rel="noopener noreferrer" className="w-full">
             <Button className="w-full rounded-full bg-green-500 hover:bg-green-600 text-white">
               {t.whatsappSupport}
             </Button>
