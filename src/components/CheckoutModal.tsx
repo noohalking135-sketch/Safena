@@ -27,14 +27,18 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
     }).filter(Boolean).join(' / ');
 
     try {
-      // استخدام مكتبة Appwrite الرسمية لإرسال المستند مع كافة الحقول الإلزامية
+      // حفظ بيانات العميل ورقم هاتفه ومعرفه لضمان فلترة الطلبات لاحقاً
+      const userPhone = user?.phone || user?.phoneNumber || "0981412535";
+      const userId = user?.$id || user?.id || userPhone;
+
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
         ID.unique(),
         {
           customer_name: user?.name || "عميل",
-          customer_phone: user?.phone || "00000000",
+          customer_phone: userPhone,
+          userId: userId,
           total: Number(cartTotal) || 0,
           items: formattedItems,
           location: location || "الموقع",
