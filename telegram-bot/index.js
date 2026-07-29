@@ -3,7 +3,6 @@ const sdk = require('node-appwrite');
 
 module.exports = async ({ req, res, log, error }) => {
   try {
-    // استخدام الأدوات المدمجة في بيئة Appwrite مباشرة (بدون الحاجة لأي ID يدوي)
     const client = new sdk.Client()
       .setEndpoint('https://cloud.appwrite.io/v1')
       .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
@@ -11,23 +10,32 @@ module.exports = async ({ req, res, log, error }) => {
 
     const databases = new sdk.Databases(client);
 
+    // استخراج بيانات الحدث القادم من Appwrite تلقائياً
+    const payload = req.payload ? JSON.parse(req.payload) : {};
     const eventHeader = req.headers['x-appwrite-event'] || '';
-    const collectionId = eventHeader.includes('complaints') ? 'complaints' : 'orders';
+    
+    // إذا جاءت الوثيقة مباشرة مع الحدث (Document Payload)
+    let doc = payload.document || payload;
 
-    // جلب أحدث وثيقة أُضيففت لقاعدة البيانات
-    const response = await databases.listDocuments(
-      'main_db',
-      collectionId,
-      [sdk.Query.limit(1), sdk.Query.orderDesc('$createdAt')]
-    );
+    // إذا لم تأتِ مباشرة، نقوم بجلبها باستخدام معرّفات الحدث الحقيقية الظاهرة في صورتك
+    if (!doc.customer_name && !doc.customer && !doc.phone && !doc.customer_phone) {
+      // استخراج databaseId و collectionId من مسار الحدث (Event) تلقائياً
+      // مثال الحدث: databases.[DATABASE_ID].collections.[COLLECTION_ID].documents.[DOCUMENT_ID].create
+      const parts = eventHeader.split('.');
+      const dbId = parts[1] || '6a65915e00291cf7f54c';
+      const colId = parts[3] || (eventHeader.includes('complaints') ? 'complaints' : 'orders');
 
-    if (response.documents.length === 0) {
-      return res.json({ success: true, message: "No documents found" });
+      const response = await databases.listDocuments(
+        dbId,
+        colId,
+        [sdk.Query.limit(1), sdk.Query.orderDesc('$createdAt')]
+      );
+
+      if (response.documents.length > 0) {
+        doc = response.documents[0];
+      }
     }
 
-    const doc = response.documents[0];
-
-    // استخراج البيانات بدقة تامة
     const customerName = doc.customer_name || doc.customer || doc.name || "عميل جديد";
     const customerPhone = doc.customer_phone || doc.phone || doc.mobile || "غير محدد";
     const location = doc.location || doc.address || "غير محدد";
