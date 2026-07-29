@@ -1,4 +1,4 @@
-Import './index.css';
+import './index.css';
 import { useState, useEffect, useRef } from "react";
 import { ShoppingBag } from "lucide-react";
 import { HomePage } from "@/components/HomePage";
