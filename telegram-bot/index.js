@@ -12,10 +12,9 @@ module.exports = async ({ req, res, log, error }) => {
 
     log("Incoming Payload: " + JSON.stringify(payload));
 
-    // استخراج البيانات إذا كانت موجودة في الحدث
     let data = payload.document || payload.current || payload.data || payload;
 
-    // إذا كان الـ payload فارغاً، نقوم بجلب أحدث سجل من قاعدة البيانات مباشرة لضمان عدم ضياع التفاصيل
+    // إذا كان الـ payload فارغاً، نقوم بجلب أحدث سجل من قاعدة البيانات مع الترتيب الصحيح
     if (!data || Object.keys(data).length === 0 || (!data.customer_name && !data.items && !data.customer)) {
       log("Payload is empty. Fetching the latest document from database...");
       
@@ -23,7 +22,8 @@ module.exports = async ({ req, res, log, error }) => {
       const DATABASE_ID = '6a65915e00291cf7f54c';
       
       try {
-        const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderType[0]=DESC`, {
+        // استخدام الترتيب التنازلي الصحيح حسب تاريخ الإنشاء
+        const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderDesc(\$createdAt)=true`, {
           headers: {
             'X-Appwrite-Project': PROJECT_ID,
             'Content-Type': 'application/json'
