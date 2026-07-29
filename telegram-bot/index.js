@@ -10,45 +10,47 @@ module.exports = async ({ req, res, log, error }) => {
       payload = req.payload;
     }
 
-    // جلب المستند من الحدث
+    // استخراج بيانات المستند من الحدث إن وجدت
     let data = payload.document || payload.current || payload;
 
-    // إذا لم تأت البيانات عبر الحدث مباشرة، نقوم بجلبها من الجدول مباشرة
-    if (!data.customer_name && !data.items) {
-      // ⚠️ ضع هنا معرف مشروعك، ومعرف قاعدة البيانات، ومعرف جدول الطلبات الصحيح لديك
-      const PROJECT_ID = '66b7cfcd0022421dfc6e'; 
-      const DATABASE_ID = 'YOUR_DATABASE_ID'; // تأكد أنه نفس APPWRITE_DATABASE_ID في التطبيق
-      const COLLECTION_ID = 'YOUR_ORDERS_TABLE_ID'; // تأكد أنه نفس ORDERS_TABLE_ID في التطبيق
-
-      try {
-        const dbResponse = await fetch(`https://cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=1&orderType[0]=DESC`, {
-          headers: {
-            'X-Appwrite-Project': PROJECT_ID,
-            'Content-Type': 'application/json'
+    // إذا لم تأت البيانات عبر الحدث مباشرة، نقوم بجلبها من قاعدة البيانات مباشرة
+    if (!data.customer_name && !data.items && !data.customer) {
+      const PROJECT_ID = '6a658f7200183d84195b'; // معرف المشروع المأخوذ من lib/appwrite.ts
+      const DATABASE_ID = '6a65915e00291cf7f54c'; // معرف قاعدة البيانات
+      
+      // البحث في جدول الطلبات ثم جدول الشكاوى
+      for (const collectionId of ['orders', 'complaints']) {
+        try {
+          const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/${collectionId}/documents?limit=1&orderType[0]=DESC`, {
+            headers: {
+              'X-Appwrite-Project': PROJECT_ID,
+              'Content-Type': 'application/json'
+            }
+          });
+          const dbResult = await dbResponse.json();
+          if (dbResult.documents && dbResult.documents.length > 0) {
+            data = dbResult.documents[0];
+            break;
           }
-        });
-        const dbResult = await dbResponse.json();
-        if (dbResult.documents && dbResult.documents.length > 0) {
-          data = dbResult.documents[0];
+        } catch (dbErr) {
+          error(`خطأ في جلب السجل من ${collectionId}: ` + dbErr.message);
         }
-      } catch (dbErr) {
-        error("خطأ في جلب السجل الأخير: " + dbErr.message);
       }
     }
 
-    // مطابقة الحقول تماماً لما يتم إرساله من CheckoutModal.tsx
-    const customerName = data.customer_name || "عميل";
-    const customerPhone = data.customer_phone || "00000000";
-    const location = data.location || "الموقع";
-    const items = data.items || "لا توجد تفاصيل";
-    const total = data.total ? `${data.total} ل.س` : "0";
+    // استخراج الحقول بدقة متناهية لتطابق ملف CheckoutModal.tsx والشكاوى
+    const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
+    const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
+    const location = data.location || data.address || data.homeAddress || "غير محدد";
+    const items = data.items || data.details || data.subject || "لا توجد تفاصيل";
+    const total = data.total ? `💰 *المجموع:* ${data.total} ل.س` : "";
 
-    const message = `🚨 *طلب جديد عبر التطبيق!*\n\n` +
+    const message = `🚨 *طلب أو شكوى جديدة عبر التطبيق!*\n\n` +
                     `👤 *العميل:* ${customerName}\n` +
                     `📞 *الهاتف:* ${customerPhone}\n` +
                     `📍 *الموقع:* ${location}\n` +
-                    `📦 *المنتجات:* ${items}\n` +
-                    `💰 *المجموع:* ${total}`;
+                    `📦 *التفاصيل:* ${items}\n` +
+                    (total ? `${total}\n` : "");
 
     const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
     const CHAT_ID = '1671413336';
