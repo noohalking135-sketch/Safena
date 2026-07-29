@@ -3,9 +3,10 @@ const sdk = require('node-appwrite');
 
 module.exports = async ({ req, res, log, error }) => {
   try {
+    // استخدام معرّف المشروع الصحيح والمباشر
     const client = new sdk.Client()
       .setEndpoint('https://cloud.appwrite.io/v1')
-      .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
+      .setProject('6a69915e00291cf7f54c') // معرّف المشروع المستخرج من إعدادات قاعدة البيانات لديك
       .setKey(req.headers['x-appwrite-key'] || process.env.APPWRITE_FUNCTION_API_KEY);
 
     const databases = new sdk.Databases(client);
@@ -13,7 +14,6 @@ module.exports = async ({ req, res, log, error }) => {
     const eventHeader = req.headers['x-appwrite-event'] || '';
     const payload = req.payload ? JSON.parse(req.payload) : {};
     
-    // جلب البيانات سواء من حمولة الحدث مباشرة أو كأحدث وثيقة
     let doc = payload.document || payload;
 
     if (!doc.customer_name && !doc.customer && !doc.phone && !doc.customer_phone) {
