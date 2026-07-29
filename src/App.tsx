@@ -37,12 +37,13 @@ export default function App() {
 
   const t = translations[lang];
 
-    const fetchOrders = () => {
+      const fetchOrders = () => {
+    // إزالة Query.orderDesc مؤقتاً لاختبار ما إذا كان الفهرس هو السبب، أو جلبها بدون استعلامات معقدة
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
-      ORDERS_TABLE_ID,
-      [Query.orderDesc('$createdAt')]
+      ORDERS_TABLE_ID
     ).then(response => {
+      console.log("Appwrite raw response:", response); // افتح المتصفح (F12) لرصد البيانات القادمة
       if (response.documents) {
         const appwriteOrders = response.documents.map((o: any) => {
           return {
@@ -50,12 +51,13 @@ export default function App() {
             $id: o.$id,
             status: o.status || "preparing",
             rawStatus: o.status || "preparing",
-            total: o.total,
-            customer: o.customer_name || o.customer || "عميل",
-            phone: o.customer_phone || o.phone || "00000000",
-            address: o.location || o.address || "الموقع",
+            total: o.total || 0,
+            customer: o.customer_name || o.customer || user?.name || "عميل",
+            phone: o.customer_phone || o.phone || user?.phone || "",
+            address: o.location || o.address || "",
             date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-            items: typeof o.items === 'string' ? [{ name: o.items, qty: 1 }] : o.items,
+            $createdAt: o.$createdAt,
+            items: typeof o.items === 'string' ? [{ name: o.items, qty: 1 }] : (o.items || []),
             location: o.location,
             deliveredTimer: o.status === 'delivered' ? (o.deliveredTimer || 300) : null,
           };
