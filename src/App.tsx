@@ -37,7 +37,7 @@ export default function App() {
 
   const t = translations[lang];
 
-  // دالة لجلب الطلبات وترجمة القيم البرمجية إلى النصوص المعروضة للمستخدم
+  // دالة لجلب الطلبات ومعالجة حالاتها باللغة الإنجليزية المعيارية
   const fetchOrders = () => {
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
@@ -46,14 +46,10 @@ export default function App() {
     ).then(response => {
       if (response.documents) {
         const appwriteOrders = response.documents.map((o: any) => {
-          let displayStatus = "قيد التحضير";
-          if (o.status === "onWay") displayStatus = "السائق في طريقه إليك";
-          else if (o.status === "delivered") displayStatus = "تم التوصيل";
-
           return {
             id: o.$id,
-            status: displayStatus,
-            rawStatus: o.status,
+            status: o.status || "preparing",
+            rawStatus: o.status || "preparing",
             total: o.total,
             date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
             items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
@@ -171,7 +167,7 @@ export default function App() {
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
     try {
-      // إرسال الطلب مع قيمة `preparing` المتوافقة حصرياً مع حقل Enum في قاعدة البيانات
+      // إرسال الحالة `preparing` حصراً لكي تتوافق مع قاعدة البيانات تماماً وتمنع أي خطأ
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
