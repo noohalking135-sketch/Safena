@@ -7,7 +7,6 @@ import { ComplaintsPage } from "@/components/ComplaintsPage";
 import { AccountPage } from "@/components/AccountPage";
 import { BottomNav } from "@/components/BottomNav";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Onboarding } from "@/components/Onboarding";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import { FlyingImage } from "@/components/FlyingImage";
@@ -19,11 +18,9 @@ import { Query } from "appwrite";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
-export type Theme = "light" | "dark";
 
 export default function App() {
   const [lang, setLang] = useState<Lang>("ar");
-  const [theme, setTheme] = useState<Theme>("light");
   const [page, setPage] = useState<Page>("home");
   const [cart, setCart] = useState<Record<number, number>>({});
   const [showCheckout, setShowCheckout] = useState(false);
@@ -31,6 +28,10 @@ export default function App() {
   const [orders, setOrders] = useState<any[]>([]);
   const [flyingImages, setFlyingImages] = useState<{ id: number; src: string; from: { x: number; y: number }; to?: { x: number; y: number } }[]>([]);
   const cartRef = useRef<HTMLDivElement>(null);
+
+  // حالة لإخفاء زر اللغة عند النزول للأسفل
+  const [showLangButton, setShowLangButton] = useState(true);
+  const lastScrollTop = useRef(0);
   
   const [user, setUser] = useState<any>(null);
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -103,6 +104,17 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // دالة مراقبة التمرير لإخفاء وإظهار زر اللغة
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const st = e.currentTarget.scrollTop;
+    if (st > lastScrollTop.current && st > 50) {
+      setShowLangButton(false); // إخفاء عند النزول لأسفل
+    } else {
+      setShowLangButton(true); // إظهار عند الصعود لأعلى
+    }
+    lastScrollTop.current = st <= 0 ? 0 : st;
+  };
+
   const handleOnboardingComplete = (data: { name: string; phone: string; homeAddress: string }) => {
     const newUser = { name: data.name, phone: data.phone, homeAddress: data.homeAddress };
     setUser(newUser);
@@ -156,16 +168,14 @@ export default function App() {
   };
 
   const pageIndex = getPageIndex(page);
-  // تثبيت اتجاه الحركة بحيث لا ينعكس عند تغيير اللغة
-  const directionMultiplier = 1; 
-  const translateXValue = pageIndex * 100 * directionMultiplier;
+  const translateXValue = pageIndex * 100;
 
   if (!user) {
     return (
-      <div dir="rtl" className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
+      <div dir="rtl" className="bg-slate-950 text-white min-h-screen">
         <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
-          <div className="absolute end-4 top-4 z-50 flex gap-2">
-            <ThemeToggle theme={theme} setTheme={setTheme} />
+          {/* زر اللغة بالزاوية اليسرى بحركة انتقال سلسة */}
+          <div className={`absolute left-4 top-4 z-50 transition-all duration-300 ${showLangButton ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
             <LanguageToggle lang={lang} setLang={setLang} />
           </div>
           <Onboarding t={t} onComplete={handleOnboardingComplete} />
@@ -182,11 +192,11 @@ export default function App() {
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
   return (
-    <div dir="rtl" className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
+    <div dir="rtl" className="bg-slate-950 text-white min-h-screen">
       <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
         
-        <div className="absolute end-4 top-4 z-50 flex gap-2">
-          <ThemeToggle theme={theme} setTheme={setTheme} />
+        {/* زر اللغة في الزاوية اليسرى مع تأثير الاختفاء عند التمرير */}
+        <div className={`absolute left-4 top-4 z-50 transition-all duration-300 ${showLangButton ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
           <LanguageToggle lang={lang} setLang={setLang} />
         </div>
 
@@ -194,7 +204,7 @@ export default function App() {
           className="flex h-full transition-transform duration-300 ease-out"
           style={{ transform: `translateX(${translateXValue}%)` }}
         >
-          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
+          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24" onScroll={handleScroll}>
             <HomePage 
               t={t} 
               lang={lang} 
@@ -204,13 +214,13 @@ export default function App() {
               onAddToCart={handleAddToCart}
             />
           </div>
-          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
+          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24" onScroll={handleScroll}>
             <OrdersPage t={t} lang={lang} orders={orders} setPage={setPage} />
           </div>
-          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
+          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24" onScroll={handleScroll}>
             <ComplaintsPage t={t} lang={lang} user={user} />
           </div>
-          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24">
+          <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24" onScroll={handleScroll}>
             <AccountPage 
               t={t} 
               lang={lang} 
