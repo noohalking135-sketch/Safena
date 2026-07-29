@@ -1,9 +1,5 @@
 const fetch = require('node-fetch');
 
-// متغير لتخزين آخر معرف تم إرساله لتجنب التكرار المزدوج للحدث
-let lastProcessedId = null;
-let lastProcessTime = 0;
-
 module.exports = async ({ req, res, log, error }) => {
   try {
     let payload = {};
@@ -14,23 +10,11 @@ module.exports = async ({ req, res, log, error }) => {
       payload = req.payload;
     }
 
+    log("Payload received: " + JSON.stringify(payload));
+
+    // استخراج البيانات مباشرة من أي هيكل محتمل للحدث
     const data = payload.document || payload.current || payload;
 
-    // التحقق من معرف المستند لمنع تكرار الإرسال لنفس الطلب تماماً
-    const docId = data.$id || data.id;
-    const now = Date.now();
-    
-    if (docId && docId === lastProcessedId && (now - lastProcessTime < 10000)) {
-      log("تم تجاهل طلب مكرر بنفس المعرف: " + docId);
-      return res.json({ success: true, message: "Duplicate ignored" });
-    }
-
-    if (docId) {
-      lastProcessedId = docId;
-      lastProcessTime = now;
-    }
-
-    // استخراج الحقول بدقة
     const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
     const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
     const location = data.location || data.address || data.homeAddress || "غير محدد";
@@ -59,14 +43,12 @@ module.exports = async ({ req, res, log, error }) => {
 
     const tgData = await tgRes.json();
     if (!tgData.ok) {
-      error("فشل إرسال تليجرام: " + JSON.stringify(tgData));
+      error("Telegram error: " + JSON.stringify(tgData));
     }
 
-    return res.json({ success: true });
-  } class (err) {
-    // تصحيح بسيط لهيكل الـ catch
+    return res.json({ success: true, tgResponse: tgData });
   } catch (err) {
-    error("خطأ حرج في الدالة: " + err.message);
+    error("Critical error: " + err.message);
     return res.json({ success: false, error: err.message }, 500);
   }
 };
