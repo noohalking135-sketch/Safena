@@ -5,23 +5,38 @@ module.exports = async ({ req, res, log, error }) => {
     let payload = {};
     
     if (typeof req.payload === 'string') {
-      try { 
-        payload = JSON.parse(req.payload); 
-      } catch (e) { 
-        payload = {}; 
-      }
+      try { payload = JSON.parse(req.payload); } catch (e) { payload = {}; }
     } else if (typeof req.payload === 'object' && req.payload !== null) {
       payload = req.payload;
     }
 
     log("Incoming Payload: " + JSON.stringify(payload));
 
-    // استخراج بيانات المستند بمرونة كاملة لتجنب أي فراغ
+    // استخراج البيانات إذا كانت موجودة في الحدث
     let data = payload.document || payload.current || payload.data || payload;
 
-    // إذا كانت البيانات عبارة عن حدث داخلي لـ Appwrite ولم يتم العثور على حقول مباشرة، نأخذ الـ payload كبيانات
-    if (!data || typeof data !== 'object') {
-      data = {};
+    // إذا كان الـ payload فارغاً، نقوم بجلب أحدث سجل من قاعدة البيانات مباشرة لضمان عدم ضياع التفاصيل
+    if (!data || Object.keys(data).length === 0 || (!data.customer_name && !data.items && !data.customer)) {
+      log("Payload is empty. Fetching the latest document from database...");
+      
+      const PROJECT_ID = '6a658f7200183d84195b';
+      const DATABASE_ID = '6a65915e00291cf7f54c';
+      
+      try {
+        const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderType[0]=DESC`, {
+          headers: {
+            'X-Appwrite-Project': PROJECT_ID,
+            'Content-Type': 'application/json'
+          }
+        });
+        const dbResult = await dbResponse.json();
+        if (dbResult.documents && dbResult.documents.length > 0) {
+          data = dbResult.documents[0];
+          log("Successfully fetched latest order from DB.");
+        }
+      } catch (dbErr) {
+        error("خطأ في جلب أحدث سجل: " + dbErr.message);
+      }
     }
 
     const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
