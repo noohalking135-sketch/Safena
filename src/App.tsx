@@ -37,7 +37,6 @@ export default function App() {
 
   const t = translations[lang];
 
-  const fetchOrders = () => {
     const fetchOrders = () => {
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
