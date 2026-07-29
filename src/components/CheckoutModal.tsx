@@ -30,7 +30,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
           return `${nameVal}${qty}`;
         }).filter(Boolean).join(' / '),
         location: location || "الموقع",
-        status: "preparing" // تم التعديل هنا لتتوافق مع قاعدة بيانات Appwrite وتمنع ظهور الخطأ
+        status: "preparing"
       }
     });
 
@@ -47,17 +47,17 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
       const responseData = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        alert("تم إرسال الطلب بنجاح!");
+        setIsSubmitting(false);
+        onConfirm(location);
       } else {
         console.error("Appwrite order insert error:", responseData);
-        alert("خطأ من السيرفر: " + (responseData.message || JSON.stringify(responseData)));
+        alert("خطأ أثناء إرسال الطلب: " + (responseData.message || JSON.stringify(responseData)));
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error("Network error submitting order:", error);
       alert("Network Error: " + JSON.stringify(error));
-    } finally {
       setIsSubmitting(false);
-      onConfirm(location);
     }
   };
 
