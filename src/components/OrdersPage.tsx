@@ -53,8 +53,10 @@ export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
           {orders.map((order: any) => {
             const statusInfo = getStatusInfo(order.status);
             // اقتطاع المعرف ليعرض آخر 4 خانات فقط بشكل أنيق
+                        // استخراج الأرقام فقط من معرف الطلب، وإن لم توجد نولد رقماً عشوائياً قصيراً من 4 أرقام
             const fullId = order.$id || order.id || "";
-            const orderId = fullId.length > 4 ? fullId.slice(-4) : fullId;
+            const numericOnly = fullId.replace(/\D/g, ""); // حذف كل الحروف والإبقاء على الأرقام فقط
+            const orderId = numericOnly.length >= 3 ? numericOnly.slice(-4) : Math.abs(fullId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)).toString().slice(-4);
 
             return (
               <Card 
