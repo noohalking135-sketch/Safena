@@ -6,7 +6,7 @@ export const APPWRITE_DATABASE_ID = "6a65915e00291cf7f54c"; // تم وضع ال�
 export const ORDERS_TABLE_ID = "orders";
 export const COMPLAINTS_TABLE_ID = "complaints";
 
-const client = new Client();
+export const client = new Client(); // <--- تم إضافة export هنا
 client
   .setEndpoint(APPWRITE_ENDPOINT)
   .setProject(APPWRITE_PROJECT_ID);
