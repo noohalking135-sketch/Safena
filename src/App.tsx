@@ -38,6 +38,7 @@ export default function App() {
   const t = translations[lang];
 
   const fetchOrders = () => {
+    const fetchOrders = () => {
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
       ORDERS_TABLE_ID,
@@ -51,8 +52,9 @@ export default function App() {
             status: o.status || "preparing",
             rawStatus: o.status || "preparing",
             total: o.total,
-            customer_name: o.customer_name,
-            customer_phone: o.customer_phone,
+            customer: o.customer_name || o.customer || "عميل",
+            phone: o.customer_phone || o.phone || "00000000",
+            address: o.location || o.address || "الموقع",
             date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
             items: typeof o.items === 'string' ? [{ name: o.items, qty: 1 }] : o.items,
             location: o.location,
