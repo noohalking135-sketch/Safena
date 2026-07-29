@@ -1,0 +1,9 @@
+{
+  "name": "telegram-bot-function",
+  "version": "1.0.0",
+  "description": "Telegram notification function for Appwrite",
+  "main": "index.js",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
