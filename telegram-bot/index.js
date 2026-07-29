@@ -1,43 +1,36 @@
 const fetch = require('node-fetch');
-const sdk = require('node-appwrite');
 
 module.exports = async ({ req, res, log, error }) => {
   if (req.headers['x-appwrite-event']) {
     try {
-      // إعداد عميل Appwrite للاتصال بقاعدة البيانات مباشرة وجلب أحدث طلب
-      const client = new sdk.Client()
-        .setEndpoint('https://cloud.appwrite.io/v1')
-        .setProject('66b7cfcd0022421dfc6e') // مشروعك في Appwrite
-        .setKey(req.headers['x-appwrite-key'] || process.env.APPWRITE_FUNCTION_API_KEY);
-
-      const databases = new sdk.Databases(client);
-
-      // معرف قاعدة البيانات والـ collections
-      const DATABASE_ID = 'main_db';
+      const payload = JSON.parse(req.payload || '{}');
       
-      // معرفة ما إذا كان الحدث يخص orders أو complaints من خلال مسار الحدث
-      const eventHeader = req.headers['x-appwrite-event'] || '';
-      const collectionId = eventHeader.includes('orders') ? 'orders' : 'complaints';
+      // محاولة استخراج البيانات مباشرة من الحدث (إذا أرسلها Appwrite)
+      let data = payload.document || payload;
 
-      // جلب أحدث وثيقة أُضيففت للتو
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        collectionId,
-        [sdk.Query.limit(1), sdk.Query.orderDesc('$createdAt')]
-      );
-
-      if (response.documents.length === 0) {
-        return res.json({ success: true, message: "No documents found" });
+      // إذا كانت البيانات فارغة، نقوم بجلب أحدث طلب أو شكوى مباشرة عبر REST API الخاص بـ Appwrite
+      if (!data.customer_name && !data.customer_phone) {
+        const eventHeader = req.headers['x-appwrite-event'] || '';
+        const collectionId = eventHeader.includes('orders') ? 'orders' : 'complaints';
+        
+        const response = await fetch(`https://cloud.appwrite.io/v1/databases/main_db/collections/${collectionId}/documents?_limit=1&_orderType[0]=DESC`, {
+          headers: {
+            'X-Appwrite-Project': '66b7cfcd0022421dfc6e',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        if (result.documents && result.documents.length > 0) {
+          data = result.documents[0];
+        }
       }
 
-      const doc = response.documents[0];
-
-      // استخراج البيانات بدقة حسب الأعمدة الموجودة في قاعدة بياناتك
-      const customerName = doc.customer_name || "عميل جديد";
-      const customerPhone = doc.customer_phone || doc.phone || "غير محدد";
-      const location = doc.location || "غير محدد";
-      const items = doc.items || doc.details || doc.subject || "غير محدد";
-      const total = doc.total ? `💰 *المجموع:* ${doc.total}` : "";
+      const customerName = data.customer_name || data.name || "عميل جديد";
+      const customerPhone = data.customer_phone || data.phone || "غير محدد";
+      const location = data.location || "غير محدد";
+      const items = data.items || data.details || data.subject || "غير محدد";
+      const total = data.total ? `💰 *المجموع:* ${data.total}` : "";
 
       const message = `🚨 *طلب أو شكوى جديدة!*\n\n` +
                       `👤 *العميل:* ${customerName}\n` +
