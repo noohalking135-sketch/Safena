@@ -35,9 +35,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
 
   return (
     <div className="flex flex-col gap-6 p-4 pt-4">
-      {/* هيدر يحتوي على الشعار في الزاوية ووصف التطبيق */}
-      <header className="flex items-center justify-between pt-2">
-            {/* هيدر يحتوي على الشعار في الزاوية المطلوبة ووصف التطبيق */}
+      {/* هيدر يحتوي على الشعار في الزاوية المطلوبة ووصف التطبيق */}
       <header className="flex items-center justify-between pt-2 flex-row-reverse">
         <img 
           src="/logo.png" 
