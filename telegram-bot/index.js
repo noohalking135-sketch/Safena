@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const sdk = require('node-appwrite');
 
 module.exports = async ({ req, res, log, error }) => {
-  if (req.headers['x-appwrite-event']) {
+  if (true) {
     try {
       // إعداد عميل Appwrite باستخدام معرّف مشروعك الصحيح
       const client = new sdk.Client()
