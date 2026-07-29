@@ -107,24 +107,41 @@ export default function App() {
     if (addresses.length > 0) localStorage.setItem("noah_addresses", JSON.stringify(addresses));
   }, [addresses]);
 
-  useEffect(() => {
+    useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prev => {
         return prev.map(order => {
-          if (order.rawStatus === "delivered") {
-            if (order.deliveredTimer === null) {
-              return { ...order, deliveredTimer: 300 };
-            } else if (order.deliveredTimer > 0) {
-              return { ...order, deliveredTimer: order.deliveredTimer - 1 };
-            } else if (order.deliveredTimer === 0) {
-              databases.deleteDocument(APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, order.id).catch(() => {});
+          const st = (order.status || "").trim().toLowerCase();
+          
+          if (st === "delivered" || st === "completed" || st === "تم التوصيل") {
+            // الحصول على وقت التوصيل المُخزن أو إنشاؤه لأول مرة
+            let deliveredTimeKey = `delivered_time_${order.$id || order.id}`;
+            let deliveredTimestamp = localStorage.getItem(deliveredTimeKey);
+
+            if (!deliveredTimestamp) {
+              deliveredTimestamp = Date.now().toString();
+              localStorage.setItem(deliveredTimeKey, deliveredTimestamp);
+            }
+
+            // حساب الثواني المتبقية بناءً على الوقت الحقيقي المنقضي
+            const elapsedSeconds = Math.floor((Date.now() - parseInt(deliveredTimestamp)) / 1000);
+            const remainingSeconds = 300 - elapsedSeconds; // 300 ثانية = 5 دقائق
+
+            if (remainingSeconds <= 0) {
+              // حذف المفتاح وتفريغ الطلب بعد انتهاء الـ 5 دقائق بالكامل
+              localStorage.removeItem(deliveredTimeKey);
+              databases.deleteDocument(APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, order.$id || order.id).catch(() => {});
               return null;
             }
+
+            return { ...order, deliveredTimer: remainingSeconds };
           }
+          
           return order;
         }).filter(Boolean);
       });
     }, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
