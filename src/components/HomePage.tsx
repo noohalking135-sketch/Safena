@@ -35,16 +35,16 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
 
   return (
     <div className="flex flex-col gap-6 p-4 pt-6">
-      {/* هيدر مع الحفاظ على اتجاه ثابت ومسافة أمان للأعلى لتجنب أدوات المتصفح */}
+      {/* تثبيت الهيدر باتجاه RTL لضمان بقاء الشعار يميناً والوصف يساراً بغض النظر عن لغة التطبيق */}
       <header className="flex items-center justify-between pt-4" dir="rtl">
-        <div className="flex flex-col items-start">
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
-        </div>
         <img 
           src="/logo.png" 
           alt="سفينة نوح" 
           className="h-14 w-auto object-contain drop-shadow-sm" 
         />
+        <div className="flex flex-col items-start">
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
+        </div>
       </header>
 
       <div className="relative">
@@ -104,7 +104,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                             onAddToCart(product, e.currentTarget.getBoundingClientRect());
                           }}
                         >
-                          <Plus className="h-3 z-3" />
+                          <Plus className="h-3 w-3" />
                         </Button>
                       </div>
                     ) : (
