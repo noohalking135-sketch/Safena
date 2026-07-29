@@ -107,36 +107,34 @@ export default function App() {
     if (addresses.length > 0) localStorage.setItem("noah_addresses", JSON.stringify(addresses));
   }, [addresses]);
 
-    useEffect(() => {
+
+      useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prev => {
         return prev.map(order => {
-          const st = (order.status || "").trim().toLowerCase();
+          const st = (order.status || order.rawStatus || "").trim().toLowerCase();
           
           if (st === "delivered" || st === "completed" || st === "تم التوصيل") {
-            // الحصول على وقت التوصيل المُخزن أو إنشاؤه لأول مرة
-            let deliveredTimeKey = `delivered_time_${order.$id || order.id}`;
-            let deliveredTimestamp = localStorage.getItem(deliveredTimeKey);
-
-            if (!deliveredTimestamp) {
-              deliveredTimestamp = Date.now().toString();
-              localStorage.setItem(deliveredTimeKey, deliveredTimestamp);
+            const orderKey = order.$id || order.id;
+            const timeKey = `delivered_timestamp_${orderKey}`;
+            
+            let savedTime = localStorage.getItem(timeKey);
+            if (!savedTime) {
+              savedTime = Date.now().toString();
+              localStorage.setItem(timeKey, savedTime);
             }
 
-            // حساب الثواني المتبقية بناءً على الوقت الحقيقي المنقضي
-            const elapsedSeconds = Math.floor((Date.now() - parseInt(deliveredTimestamp)) / 1000);
-            const remainingSeconds = 300 - elapsedSeconds; // 300 ثانية = 5 دقائق
+            const elapsedSeconds = Math.floor((Date.now() - parseInt(savedTime)) / 1000);
+            const remaining = 300 - elapsedSeconds;
 
-            if (remainingSeconds <= 0) {
-              // حذف المفتاح وتفريغ الطلب بعد انتهاء الـ 5 دقائق بالكامل
-              localStorage.removeItem(deliveredTimeKey);
-              databases.deleteDocument(APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, order.$id || order.id).catch(() => {});
+            if (remaining <= 0) {
+              localStorage.removeItem(timeKey);
+              databases.deleteDocument(APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, orderKey).catch(() => {});
               return null;
             }
 
-            return { ...order, deliveredTimer: remainingSeconds };
+            return { ...order, deliveredTimer: remaining };
           }
-          
           return order;
         }).filter(Boolean);
       });
