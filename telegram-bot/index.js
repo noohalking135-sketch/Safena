@@ -3,17 +3,16 @@ const fetch = require('node-fetch');
 module.exports = async ({ req, res, log, error }) => {
   if (req.headers['x-appwrite-event']) {
     try {
-      // طباعة البيانات للتأكد منها في سجلات Appwrite
-      log("Received event payload: " + req.payload);
-      
       const payload = JSON.parse(req.payload || '{}');
       
-      // استخراج البيانات سواء كانت مرسلة مباشرة أو داخل وثيقة
-      const customerName = payload.customer_name || "عميل جديد";
-      const customerPhone = payload.customer_phone || "غير محدد";
-      const location = payload.location || "غير محدد";
-      const items = payload.items || payload.details || "غير محدد";
-      const total = payload.total ? `💰 *المجموع:* ${payload.total}` : "";
+      // دعم قراءة البيانات سواء كانت مرسلة مباشرة أو داخل وثيقة قاعدة بيانات
+      const data = payload.document || payload;
+      
+      const customerName = data.customer_name || data.name || "عميل جديد";
+      const customerPhone = data.customer_phone || data.phone || "غير محدد";
+      const location = data.location || "غير محدد";
+      const items = data.items || data.details || "غير محدد";
+      const total = data.total ? `💰 *المجموع:* ${data.total}` : "";
       
       const message = `🚨 *طلب أو شكوى جديدة!*\n\n` +
                       `👤 *العميل:* ${customerName}\n` +
