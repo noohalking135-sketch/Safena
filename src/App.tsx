@@ -14,7 +14,7 @@ import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
 import { databases, client, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
-import { Query } from "appwrite";
+import { Query, ID } from "appwrite";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
@@ -38,7 +38,7 @@ export default function App() {
 
   const t = translations[lang];
 
-  // دالة لجلب الطلبات مباشرة من Appwrite وعرضها بأحدث حالة
+  // دالة لجلب الطلبات مباشرة من Appwrite
   const fetchOrders = () => {
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
@@ -55,8 +55,6 @@ export default function App() {
           location: o.location,
           timer: 300,
         }));
-        
-        // الاعتماد الكلي على بيانات Appwrite المباشرة لتجنب أي تعارض قديم
         setOrders(appwriteOrders);
       }
     }).catch(error => {
@@ -150,7 +148,8 @@ export default function App() {
     }, 800);
   };
 
-  const handleCheckoutConfirm = (location: string) => {
+  // تعديل دالة إتمام الطلب لإرساله وحفظه مباشرة في قاعدة بيانات Appwrite
+  const handleCheckoutConfirm = async (location: string) => {
     setShowCheckout(false);
     
     const cartItems = Object.entries(cart).map(([id, qty]) => {
@@ -160,18 +159,26 @@ export default function App() {
     
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
-    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newOrder = {
-      id: orderId,
-      status: "قيد التحضير",
-      total,
-      date: new Date().toISOString().split('T')[0],
-      items: cartItems,
-      location,
-      timer: 300,
-    };
+    try {
+      // حفظ الطلب الجديد في قاعدة بيانات Appwrite بشكل دائم
+      await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        ORDERS_TABLE_ID,
+        ID.unique(),
+        {
+          status: "قيد التحضير",
+          total: Number(total),
+          items: JSON.stringify(cartItems),
+          location: location || "",
+        }
+      );
+      
+      // جلب الطلبات المحدثة بعد الحفظ
+      fetchOrders();
+    } catch (error) {
+      console.error("Error saving order to Appwrite:", error);
+    }
 
-    setOrders(prev => [newOrder, ...prev]);
     setCart({});
     setShowSuccess(true);
     setTimeout(() => {
