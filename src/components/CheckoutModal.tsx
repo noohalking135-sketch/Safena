@@ -1,4 +1,4 @@
-import { useState } from "react"; 
+Import { useState } from "react";
 import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -19,27 +19,27 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
 
     setIsSubmitting(true);
 
+    // تجهيز الأصناف كنص واضح
     const formattedItems = (cartItems || []).map((item: any) => {
       const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
       const qty = item.qty || item.quantity || 1;
       return `${nameVal} (x${qty})`;
     }).filter(Boolean).join(' / ');
 
-    const orderData = {
-      customer_name: user?.name || "عميل",
-      customer_phone: user?.phone || "0981412535",
-      total: Number(cartTotal) || 0,
-      items: formattedItems,
-      location: location || "الموقع",
-      status: "preparing"
-    };
-
     try {
+      // استخدام مكتبة Appwrite الرسمية لإرسال المستند مع كافة الحقول الإلزامية
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
         ID.unique(),
-        orderData
+        {
+          customer_name: user?.name || "عميل",
+          customer_phone: user?.phone || "00000000",
+          total: Number(cartTotal) || 0,
+          items: formattedItems,
+          location: location || "الموقع",
+          status: "preparing"
+        }
       );
 
       setIsSubmitting(false);
