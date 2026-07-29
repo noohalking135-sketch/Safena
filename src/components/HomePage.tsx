@@ -34,16 +34,16 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
   const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
   return (
-    <div className="flex flex-col gap-6 p-4 pt-4">
-      {/* هيدر يضع الشعار أقصى اليمين ووصف التطبيق أقصى اليسار */}
-      <header className="flex items-center justify-between pt-2">
+    <div className="flex flex-col gap-6 p-4 pt-6">
+      {/* هيدر مع الحفاظ على اتجاه ثابت ومسافة أمان للأعلى لتجنب أدوات المتصفح */}
+      <header className="flex items-center justify-between pt-4" dir="rtl">
         <div className="flex flex-col items-start">
           <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
         </div>
         <img 
           src="/logo.png" 
           alt="سفينة نوح" 
-          className="h-12 w-auto object-contain drop-shadow-sm" 
+          className="h-14 w-auto object-contain drop-shadow-sm" 
         />
       </header>
 
@@ -104,7 +104,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                             onAddToCart(product, e.currentTarget.getBoundingClientRect());
                           }}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-3 z-3" />
                         </Button>
                       </div>
                     ) : (
