@@ -1,54 +1,62 @@
 const fetch = require('node-fetch');
+const sdk = require('node-appwrite');
 
 module.exports = async ({ req, res, log, error }) => {
-  if (req.headers['x-appwrite-event']) {
-    try {
-      const eventHeader = req.headers['x-appwrite-event'] || '';
-      let collectionId = 'orders';
-      if (eventHeader.includes('complaints')) {
-        collectionId = 'complaints';
-      }
+  try {
+    // استخدام الأدوات المدمجة في بيئة Appwrite مباشرة (بدون الحاجة لأي ID يدوي)
+    const client = new sdk.Client()
+      .setEndpoint('https://cloud.appwrite.io/v1')
+      .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
+      .setKey(req.headers['x-appwrite-key'] || process.env.APPWRITE_FUNCTION_API_KEY);
 
-      // جلب البيانات مع طباعة حالة الاستجابة
-      const apiUrl = `https://cloud.appwrite.io/v1/databases/main_db/collections/${collectionId}/documents`;
-      
-      const response = await fetch(apiUrl, {
-        headers: {
-          'X-Appwrite-Project': '6a69948f00255a55cfed',
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const result = await response.json();
-      
-      // نرسل تفاصيل ما تم العثور عليه لتليجرام مباشرة لنرى النتيجة
-      let debugMsg = `🔍 الاستجابة:\n- عدد الوثائق: ${result.documents ? result.documents.length : 'غير متوفر'}\n`;
-      if(result.message) debugMsg += `- خطأ: ${result.message}\n`;
-      
-      if (result.documents && result.documents.length > 0) {
-        const doc = result.documents[0];
-        debugMsg += `\n👤 الاسم: ${doc.customer_name || doc.customer || 'غير موجود'}\n📞 الهاتف: ${doc.customer_phone || doc.phone || 'غير موجود'}`;
-      }
+    const databases = new sdk.Databases(client);
 
-      const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
-      const CHAT_ID = '1671413336';
+    const eventHeader = req.headers['x-appwrite-event'] || '';
+    const collectionId = eventHeader.includes('complaints') ? 'complaints' : 'orders';
 
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: debugMsg,
-          parse_mode: 'Markdown'
-        })
-      });
+    // جلب أحدث وثيقة أُضيففت لقاعدة البيانات
+    const response = await databases.listDocuments(
+      'main_db',
+      collectionId,
+      [sdk.Query.limit(1), sdk.Query.orderDesc('$createdAt')]
+    );
 
-      return res.json({ success: true });
-    } catch (err) {
-      error("Error: " + err.message);
-      return res.json({ success: false, error: err.message }, 500);
+    if (response.documents.length === 0) {
+      return res.json({ success: true, message: "No documents found" });
     }
-  }
 
-  return res.json({ success: true });
+    const doc = response.documents[0];
+
+    // استخراج البيانات بدقة تامة
+    const customerName = doc.customer_name || doc.customer || doc.name || "عميل جديد";
+    const customerPhone = doc.customer_phone || doc.phone || doc.mobile || "غير محدد";
+    const location = doc.location || doc.address || "غير محدد";
+    const items = doc.items || doc.details || doc.subject || "غير محدد";
+    const total = doc.total ? `💰 *المجموع:* ${doc.total}` : "";
+
+    const message = `🚨 *طلب أو شكوى جديدة!*\n\n` +
+                    `👤 *العميل:* ${customerName}\n` +
+                    `📞 *الهاتف:* ${customerPhone}\n` +
+                    `📍 *الموقع:* ${location}\n` +
+                    `📦 *التفاصيل:* ${items}\n` +
+                    (total ? `${total}\n` : "");
+
+    const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
+    const CHAT_ID = '1671413336';
+
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+
+    return res.json({ success: true });
+  } catch (err) {
+    error("Error: " + err.message);
+    return res.json({ success: false, error: err.message }, 500);
+  }
 };
