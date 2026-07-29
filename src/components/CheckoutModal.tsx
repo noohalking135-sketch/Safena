@@ -3,9 +3,12 @@ import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
-import { ID } from "appwrite";
+import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, client } from "@/lib/appwrite";
+import { ID, Functions } from "appwrite";
 import { cn } from "@/lib/utils";
+
+const functions = new Functions(client);
+const TELEGRAM_FUNCTION_ID = "telegram-bot"; // معرف دالة تليجرام في Appwrite
 
 export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, cartItems, cartTotal }: any) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
@@ -27,26 +30,8 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
     }).filter(Boolean).join(' / ');
 
     try {
-      // استخدام مكتبة Appwrite الرسمية لإرسال المستند مع كافة الحقول الإلزامية
+      // 1. حفظ الطلب في قاعدة البيانات
       await databases.createDocument(
-        import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, client } from "@/lib/appwrite";
-import { ID, Functions } from "appwrite";
-
-const functions = new Functions(client);
-const TELEGRAM_FUNCTION_ID = "telegram-bot"; // تأكد من وضع معرف دالة تليجرام الصحيح لديك في Appwrite
-
-// داخل handleConfirm بعد نجاح إنشاء المستند:
-await functions.createExecution(
-  TELEGRAM_FUNCTION_ID,
-  JSON.stringify({
-    customer_name: user?.name || "عميل",
-    customer_phone: user?.phone || "00000000",
-    total: Number(cartTotal) || 0,
-    items: formattedItems,
-    location: location || "الموقع"
-  })
-);
-
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
         ID.unique(),
@@ -59,6 +44,22 @@ await functions.createExecution(
           status: "preparing"
         }
       );
+
+      // 2. إرسال البيانات مباشرة إلى دالة تليجرام لتصل بالمعلومات الصحيحة فوراً
+      try {
+        await functions.createExecution(
+          TELEGRAM_FUNCTION_ID,
+          JSON.stringify({
+            customer_name: user?.name || "عميل",
+            customer_phone: user?.phone || "00000000",
+            total: Number(cartTotal) || 0,
+            items: formattedItems,
+            location: location || "الموقع"
+          })
+        );
+      } catch (tgErr) {
+        console.error("Telegram function execution error:", tgErr);
+      }
 
       setIsSubmitting(false);
       onConfirm(location);
