@@ -13,7 +13,7 @@ import { FlyingImage } from "@/components/FlyingImage";
 import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
-import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
+import { databases, client, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
 import { Query } from "appwrite";
 
 export type Lang = "ar" | "en";
@@ -38,6 +38,35 @@ export default function App() {
 
   const t = translations[lang];
 
+  // دالة لجلب الطلبات من Appwrite
+  const fetchOrders = () => {
+    databases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      ORDERS_TABLE_ID,
+      [Query.orderDesc('$createdAt')]
+    ).then(response => {
+      if (response.documents) {
+        const appwriteOrders = response.documents.map((o: any) => ({
+          id: o.$id,
+          status: o.status,
+          total: o.total,
+          date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+          items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+          location: o.location,
+          timer: 300,
+        }));
+        
+        // دمج الطلبات المحلية والجديدة مع إعطاء الأولوية لتحديثات Appwrite اللحظية
+        setOrders(prev => {
+          const localOrders = prev.filter(local => !appwriteOrders.some((remote: any) => remote.id === local.id));
+          return [...appwriteOrders, ...localOrders];
+        });
+      }
+    }).catch(error => {
+      console.error("Error fetching orders from Appwrite:", error);
+    });
+  };
+
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem("noah_user");
@@ -48,30 +77,24 @@ export default function App() {
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        ORDERS_TABLE_ID,
-        [Query.orderDesc('$createdAt')]
-      ).then(response => {
-        if (response.documents && response.documents.length > 0) {
-          const appwriteOrders = response.documents.map((o: any) => ({
-            id: o.$id,
-            status: o.status,
-            total: o.total,
-            date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-            items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
-            location: o.location,
-            timer: 300,
-          }));
-          setOrders(prev => {
-            const existingIds = new Set(prev.map(o => o.id));
-            const newOrders = appwriteOrders.filter((o: any) => !existingIds.has(o.id));
-            return [...prev, ...newOrders];
-          });
+      // جلب الطلبات لأول مرة
+      fetchOrders();
+
+      // تفعيل الاتصال اللحظي Realtime من Appwrite للتحديث الفوري عند أي تعديل في القاعدة
+      const channel = `databases.${APPWRITE_DATABASE_ID}.collections.${ORDERS_TABLE_ID}.documents`;
+      const unsubscribe = client.subscribe(channel, (response) => {
+        // إذا حدث تعديل (update) أو إنشاء (create) على أي مستند، نقوم بإعادة جلب الطلبات فوراً
+        if (
+          response.events.includes("databases.*.collections.*.documents.*.update") ||
+          response.events.includes("databases.*.collections.*.documents.*.create")
+        ) {
+          fetchOrders();
         }
-      }).catch(error => {
-        console.error("Error fetching orders from Appwrite:", error);
       });
+
+      return () => {
+        unsubscribe();
+      };
 
     } catch (e) {
       console.error("Failed to load user data", e);
@@ -174,7 +197,6 @@ export default function App() {
     return (
       <div dir="rtl" className="bg-slate-950 text-white min-h-screen">
         <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
-          {/* زر اللغة بالزاوية اليسرى بحركة انتقال سلسة */}
           <div className={`absolute left-4 top-4 z-50 transition-all duration-300 ${showLangButton ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
             <LanguageToggle lang={lang} setLang={setLang} />
           </div>
@@ -195,7 +217,6 @@ export default function App() {
     <div dir="rtl" className="bg-slate-950 text-white min-h-screen">
       <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
         
-        {/* زر اللغة في الزاوية اليسرى مع تأثير الاختفاء عند التمرير */}
         <div className={`absolute left-4 top-4 z-50 transition-all duration-300 ${showLangButton ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
           <LanguageToggle lang={lang} setLang={setLang} />
         </div>
