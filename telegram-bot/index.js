@@ -12,20 +12,24 @@ module.exports = async ({ req, res, log, error }) => {
 
     log("Incoming Payload: " + JSON.stringify(payload));
 
-    // استخراج المستند مباشرة من الحدث القادم من Appwrite
+    // استخراج المستند من الحدث (Appwrite يضع المستند الجديد داخل document أو current)
     let data = payload.document || payload.current || payload;
 
-    // إذا لم تكن هناك بيانات صالحة، نتوقف فوراً ولا نقوم بجلب سجلات قديمة لتجنب التكرار
-    if (!data || (!data.customer_name && !data.items && !data.customer && !data.total)) {
-      log("Payload is empty or does not contain order data. Skipping.");
-      return res.json({ success: true, message: "No action needed" });
-    }
+    // طباعة البيانات في السجلات لنراها بوضوح في حال احتجت للمراجعة
+    log("Extracted Data: " + JSON.stringify(data));
 
+    // استخراج الحقول مع توفير قيم افتراضية تفصيلية لتجنب توقف الكود
     const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
     const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
     const location = data.location || data.address || data.homeAddress || "غير محدد";
     const items = data.items || data.details || data.subject || "لا توجد تفاصيل";
     const total = data.total !== undefined && data.total !== null ? `💰 *المجموع:* ${data.total} ل.س` : "";
+
+    // التأكد من أن هناك محتوى حقيقي للإرسال
+    if (!data || Object.keys(data).length === 0) {
+      error("البيانات المستلمة فارغة تماماً.");
+      return res.json({ success: false, error: "Empty payload data" }, 400);
+    }
 
     const message = `🚨 *طلب أو شكوى جديدة عبر التطبيق!*\n\n` +
                     `👤 *العميل:* ${customerName}\n` +
@@ -37,7 +41,8 @@ module.exports = async ({ req, res, log, error }) => {
     const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
     const CHAT_ID = '1671413336';
 
-    const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const tgRes = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const response = await fetch(tgRes, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -47,9 +52,10 @@ module.exports = async ({ req, res, log, error }) => {
       })
     });
 
-    const tgData = await tgRes.json();
+    const tgData = await response.json();
     if (!tgData.ok) {
       error("فشل إرسال تليجرام: " + JSON.stringify(tgData));
+      return res.json({ success: false, telegram_error: tgData }, 500);
     }
 
     return res.json({ success: true });
