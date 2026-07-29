@@ -1,7 +1,7 @@
 export const translations = {
   ar: {
     appName: "سفينة نوح لتوصيل الطلبات",
-    tagline: "أسرع توصيلة في مدينتك",
+    tagline: "أسرع توصيلة في الشام",
     searchPlaceholder: "ابحث عن مطعم أو طبق...",
     categories: "التصنيفات",
     popular: "الأكثر طلباً",
@@ -48,7 +48,7 @@ export const translations = {
     darkMode: "الوضع الليلي",
     lightMode: "الوضع النهاري",
     whatsappSupport: "تواصل عبر واتساب",
-    whatsappNumber: "0959213962",
+    whatsappNumber: "+963959213962",
     addAddress: "إضافة عنوان جديد",
     editAddress: "تعديل العنوان",
     addressLabel: "اسم العنوان (مثل: المنزل، العمل)",
@@ -104,7 +104,7 @@ export const translations = {
   },
   en: {
     appName: "Noah's Ark Delivery",
-    tagline: "Fastest delivery in your city",
+    tagline: "Fastest delivery in Damascus",
     searchPlaceholder: "Search for restaurant or dish...",
     categories: "Categories",
     popular: "Most Popular",
