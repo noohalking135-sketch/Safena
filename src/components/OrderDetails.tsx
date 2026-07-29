@@ -5,59 +5,70 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { OrderMap } from "@/components/OrderMap";
-import type { Order } from "@/lib/data";
 
-export function OrderDetails({ order }: { order: Order }) {
-  const statusConfig = {
-    preparing: { label: "قيد التحضير", color: "bg-amber-100 text-amber-700", icon: UtensilsCrossed },
-    delivering: { label: "قيد التوصيل", color: "bg-blue-100 text-blue-700", icon: Bike },
-    completed: { label: "مكتمل", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
+export function OrderDetails({ order, t }: { order: any; t: any }) {
+  // قراءة الحالة القادمة من عمود status في Appwrite (سواء كانت بالعربية أو الإنجليزية)
+  const rawStatus = order.status ? order.status.trim() : "قيد التحضير";
+
+  // خريطة لتحديد الألوان والأيقونات بناءً على القيمة المخزنة في قاعدة البيانات
+  const getStatusConfig = (status: string) => {
+    if (status === "في الطريق" || status === "delivering" || status === "on_way") {
+      return { label: t?.statusOnWay || "في الطريق", color: "bg-blue-100 text-blue-700", icon: Bike };
+    }
+    if (status === "تم التوصيل" || status === "completed" || status === "delivered") {
+      return { label: t?.statusDelivered || "تم التوصيل", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 };
+    }
+    // الحالة الافتراضية: قيد التحضير
+    return { label: t?.statusPreparing || "قيد التحضير", color: "bg-amber-100 text-amber-700", icon: UtensilsCrossed };
   };
-  const config = statusConfig[order.status];
+
+  const config = getStatusConfig(rawStatus);
   const StatusIcon = config.icon;
 
+  // تحديد المراحل المكتملة بناءً على الحالة الحقيقية من Appwrite
+  const isDelivered = rawStatus === "تم التوصيل" || rawStatus === "completed" || rawStatus === "delivered";
+  const isOnWay = rawStatus === "في الطريق" || rawStatus === "delivering" || rawStatus === "on_way" || isDelivered;
+
   return (
-    <div className="p-5">
+    <div className="p-5" dir="rtl">
       {/* Order header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-slate-400">رقم الطلب</p>
-          <h3 className="text-xl font-bold text-slate-900">#{order.id}</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">#{order.id || order.$id?.slice(-4)}</h3>
         </div>
         <Badge className={`${config.color} border-0 px-3 py-1 font-medium`}>
-          <StatusIcon className="ml-1 h-3.5 w-3.5" />
+          <StatusIcon className="ms-1 h-3.5 w-3.5" />
           {config.label}
         </Badge>
       </div>
 
       {/* Map */}
-      <div className="mt-4 h-48">
+      <div className="mt-4 h-48 overflow-hidden rounded-xl">
         <OrderMap />
       </div>
 
-      {/* Timeline */}
+      {/* Timeline (المراحل الحقيقية بناءً على Appwrite) */}
       <div className="mt-5">
-        <h4 className="mb-3 text-sm font-bold text-slate-700">مراحل الطلب</h4>
+        <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-300">مراحل الطلب</h4>
         <div className="space-y-1">
           {[
-            { label: "تم استلام الطلب", time: "2:30 م", done: true },
-            { label: "تم قبول المطعم", time: "2:32 م", done: true },
-            { label: "قيد التحضير", time: "2:35 م", done: order.status !== "preparing" },
-            { label: "السائق في الطريق", time: "2:50 م", done: order.status === "delivering" || order.status === "completed" },
-            { label: "تم التوصيل", time: "3:05 م", done: order.status === "completed" },
+            { label: "تم استلام الطلب", done: true },
+            { label: "قيد التحضير", done: true },
+            { label: "السائق في الطريق", done: isOnWay },
+            { label: "تم التوصيل", done: isDelivered },
           ].map((step, i, arr) => (
             <div key={i} className="flex items-start gap-3">
               <div className="flex flex-col items-center">
-                <div className={`flex h-7 w-7 items-center justify-center rounded-full ${step.done ? "bg-emerald-500" : "bg-slate-200"}`}>
+                <div className={`flex h-7 w-7 items-center justify-center rounded-full ${step.done ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`}>
                   <CheckCircle2 className={`h-4 w-4 ${step.done ? "text-white" : "text-slate-400"}`} />
                 </div>
                 {i < arr.length - 1 && (
-                  <div className={`mt-1 h-6 w-0.5 ${step.done ? "bg-emerald-500" : "bg-slate-200"}`} />
+                  <div className={`mt-1 h-6 w-0.5 ${step.done ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`} />
                 )}
               </div>
               <div className="pt-0.5">
-                <p className={`text-sm font-medium ${step.done ? "text-slate-900" : "text-slate-400"}`}>{step.label}</p>
-                <p className="text-xs text-slate-400">{step.time}</p>
+                <p className={`text-sm font-medium ${step.done ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>{step.label}</p>
               </div>
             </div>
           ))}
@@ -68,66 +79,56 @@ export function OrderDetails({ order }: { order: Order }) {
 
       {/* Customer info */}
       <div>
-        <h4 className="mb-3 text-sm font-bold text-slate-700">معلومات العميل</h4>
-        <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+        <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-300">معلومات العميل</h4>
+        <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-orange-100 text-xs font-bold text-orange-700">
-              {order.customer.split(" ").map((n) => n[0]).join("")}
+            <AvatarFallback className="bg-yellow-100 text-xs font-bold text-yellow-700">
+              {order.customer ? order.customer.split(" ").map((n: string) => n[0]).join("") : "زب"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <p className="text-sm font-bold text-slate-900">{order.customer}</p>
-            <p className="text-xs text-slate-500">{order.phone}</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">{order.customer || "العميل"}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400" dir="ltr">{order.phone}</p>
           </div>
-          <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-slate-200">
-            <Phone className="h-4 w-4 text-slate-600" />
-          </Button>
+          {order.phone && (
+            <a href={`tel:${order.phone}`}>
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-700">
+                <Phone className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+              </Button>
+            </a>
+          )}
         </div>
       </div>
 
       {/* Delivery address */}
       <div className="mt-4">
-        <h4 className="mb-2 text-sm font-bold text-slate-700">عنوان التوصيل</h4>
-        <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3">
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
-          <p className="text-sm text-slate-600">{order.address}</p>
+        <h4 className="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300">عنوان التوصيل</h4>
+        <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
+          <p className="text-sm text-slate-600 dark:text-slate-300">{order.address || order.homeAddress || "العنوان بالتفصيل"}</p>
         </div>
       </div>
 
       <Separator className="my-5" />
 
-      {/* Order items */}
+      {/* Order items / Total */}
       <div>
-        <h4 className="mb-3 text-sm font-bold text-slate-700">تفاصiل الفاتورة</h4>
+        <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-300">تفاصيل الفاتورة</h4>
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-500">المجموع الفرعي</span>
-            <span className="font-medium text-slate-900">{order.subtotal} ر.س</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-500">رسوم التوصيل</span>
-            <span className="font-medium text-slate-900">{order.deliveryFee} ر.س</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-500">الضريبة (15%)</span>
-            <span className="font-medium text-slate-900">{order.tax} ر.س</span>
-          </div>
-          <Separator className="my-2" />
           <div className="flex items-center justify-between">
-            <span className="text-base font-bold text-slate-900">الإجمالي</span>
-            <span className="text-lg font-bold text-orange-600">{order.total} ر.س</span>
+            <span className="text-base font-bold text-slate-900 dark:text-white">الإجمالي</span>
+            <span className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{order.total || 0} {t?.currency || "ل.س"}</span>
           </div>
         </div>
       </div>
 
       {/* Action buttons */}
       <div className="mt-5 flex gap-2">
-        <Button className="flex-1 rounded-xl bg-orange-600 text-white hover:bg-orange-700">
-          تواصل مع السائق
-        </Button>
-        <Button variant="outline" className="rounded-xl border-slate-200 px-4">
-          <Package className="h-4 w-4" />
-        </Button>
+        <a href={`https://wa.me/963959213962`} target="_blank" rel="noopener noreferrer" className="flex-1">
+          <Button className="w-full rounded-xl bg-yellow-400 text-slate-900 hover:bg-yellow-500 font-bold">
+            تواصل معنا بخصوص الطلب
+          </Button>
+        </a>
       </div>
     </div>
   );
