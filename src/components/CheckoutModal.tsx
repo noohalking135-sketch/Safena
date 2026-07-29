@@ -28,15 +28,21 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
       return `${nameVal} (x${qty})`;
     }).filter(Boolean).join(' / ');
 
-    const orderData = {
-      customer_name: user?.name || "عميل",
-      customer_phone: user?.phone || "0981412535",
+        const orderData = {
+      customer_name: user?.name || user?.fullName || "زائر",
+      customer_phone: user?.phone || user?.mobile || "",
       total: Number(cartTotal) || 0,
       items: formattedItems,
       location: location || "الموقع",
       status: "preparing"
     };
 
+    // منع الإرسال إذا كان الهاتف فارغاً لضمان عدم اختلاط الهويات
+    if (!orderData.customer_phone) {
+      alert("يرجى التأكد من تسجيل رقم الهاتف في الحساب.");
+      setIsSubmitting(false);
+      return;
+    }
     try {
       // 1. حفظ الطلب في قاعدة البيانات
       await databases.createDocument(
