@@ -11,7 +11,6 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // جلب طلبات المستخدم الحالي فقط من قاعدة البيانات باستخدام رقم الهاتف
   useEffect(() => {
     const fetchUserOrders = async () => {
       try {
@@ -22,7 +21,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
           return;
         }
 
-        // الاستعلام الأفضل: جلب الطلبات التي يطابق رقم هاتفها رقم المستخدم الحالي فقط
+        // جلب الطلبات الخاصة برقم هاتف المستخدم الحالي حصراً
         const response = await databases.listDocuments(
           APPWRITE_DATABASE_ID,
           ORDERS_TABLE_ID,
@@ -68,6 +67,27 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
       label: t?.statusPreparing || "قيد التحضير",
       color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
     };
+  };
+
+  // دالة ذكية لتحليل وعرض تفاصيل أصناف الطلب بشكل نظيف
+  const renderOrderItems = (itemsRaw: any) => {
+    try {
+      const items = typeof itemsRaw === 'string' ? JSON.parse(itemsRaw) : itemsRaw;
+      if (!Array.isArray(items)) return "تفاصيل الطلب مسجلة";
+
+      return items.map((item: any, idx: number) => {
+        let itemName = "منتج";
+        if (typeof item.name === 'string') {
+          itemName = item.name;
+        } else if (item.name && typeof item.name === 'object') {
+          itemName = item.name[lang] || item.name['ar'] || item.name['en'] || "منتج";
+        }
+        const qty = item.qty || item.quantity || 1;
+        return `${qty}x ${itemName}`;
+      }).join("، ");
+    } catch (e) {
+      return typeof itemsRaw === 'string' ? itemsRaw : "تفاصيل الطلب";
+    }
   };
 
   if (loading) {
@@ -119,8 +139,10 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
                 </CardHeader>
                 
                 <CardContent className="p-4 pt-0">
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    <span className="text-xs text-slate-600 dark:text-slate-300">تفاصيل الطلب مسجلة بنجاح</span>
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-2">
+                      {renderOrderItems(order.items)}
+                    </p>
                   </div>
 
                   {(() => {
@@ -144,7 +166,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
                   )}
 
                   <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400 mt-2 border-t border-slate-100 dark:border-slate-700/50 pt-3">
-                    <span>التفاصيل</span>
+                    <span>الإجمالي</span>
                     <span className="font-bold text-slate-900 dark:text-white">{order.total} ل.س</span>
                   </div>
                 </CardContent>
