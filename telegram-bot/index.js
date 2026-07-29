@@ -1,63 +1,58 @@
-const fetch = require('node-fetch');
-
 module.exports = async ({ req, res, log, error }) => {
-  if (req.headers['x-appwrite-event']) {
-    try {
-      const payload = JSON.parse(req.payload || '{}');
-      
-      // جلب البيانات سواء كانت من الحدث مباشرة أو عبر جلب آخر وثيقة
-      let data = payload.document || payload;
-
-      if (!data.customer_name && !data.customer && !data.customer_phone) {
-        const eventHeader = req.headers['x-appwrite-event'] || '';
-        const collectionId = eventHeader.includes('orders') ? 'orders' : 'complaints';
-        
-        const response = await fetch(`https://cloud.appwrite.io/v1/databases/main_db/collections/${collectionId}/documents?_limit=1&_orderType[0]=DESC`, {
-          headers: {
-            'X-Appwrite-Project': '66b7cfcd0022421dfc6e',
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        const result = await response.json();
-        if (result.documents && result.documents.length > 0) {
-          data = result.documents[0];
-        }
+  // التحقق من أن الطلب قادم كحدث من Appwrite أو تم تنفيذه يدوياً
+  try {
+    let payload = {};
+    
+    // محاولة تحليل الـ payload سواء كان نصاً أو كائناً جاهزاً
+    if (typeof req.payload === 'string') {
+      try {
+        payload = JSON.parse(req.payload);
+      } catch (e) {
+        payload = {};
       }
-
-      // دعم كافة أسماء الحقول المحتملة لتجنب أي خطأ مستقبلاً
-      const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
-      const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
-      const location = data.location || data.address || data.homeAddress || "غير محدد";
-      const items = data.items || data.details || data.subject || "غير محدد";
-      const total = data.total ? `💰 *المجموع:* ${data.total}` : "";
-
-      const message = `🚨 *طلب أو شكوى جديدة!*\n\n` +
-                      `👤 *العميل:* ${customerName}\n` +
-                      `📞 *الهاتف:* ${customerPhone}\n` +
-                      `📍 *الموقع:* ${location}\n` +
-                      `📦 *التفاصيل:* ${items}\n` +
-                      (total ? `${total}\n` : "");
-
-      const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
-      const CHAT_ID = '1671413336';
-
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: CHAT_ID,
-          text: message,
-          parse_mode: 'Markdown'
-        })
-      });
-
-      return res.json({ success: true });
-    } catch (err) {
-      error("Error: " + err.message);
-      return res.json({ success: false, error: err.message }, 500);
+    } else if (typeof req.payload === 'object' && req.payload !== null) {
+      payload = req.payload;
     }
-  }
 
-  return res.json({ success: true });
+    // استخراج المستند من الحدث (يدعم مختلف هياكل أحداث Appwrite)
+    const data = payload.document || payload.current || payload;
+
+    // استخراج البيانات مع الحفاظ على الحقول المرسلة من التطبيق (CheckoutModal)
+    const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
+    const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
+    const location = data.location || data.address || data.homeAddress || "غير محدد";
+    const items = data.items || data.details || data.subject || "غير محدد";
+    const total = data.total ? `💰 *المجموع:* ${data.total} ل.س` : "";
+
+    // التأكد من أن هناك بيانات حقيقية وليست مجرد إشعار فارغ
+    const message = `🚨 *طلب جديد عبر التطبيق!*\n\n` +
+                    `👤 *العميل:* ${customerName}\n` +
+                    `📞 *الهاتف:* ${customerPhone}\n` +
+                    `📍 *الموقع:* ${location}\n` +
+                    `📦 *التفاصيل:* ${items}\n` +
+                    (total ? `${total}\n` : "");
+
+    const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
+    const CHAT_ID = '1671413336';
+
+    const telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+
+    const telegramResult = await telegramResponse.json();
+    if (!telegramResult.ok) {
+      error("Telegram API Error: " + JSON.stringify(telegramResult));
+    }
+
+    return res.json({ success: true, message: "Notification sent successfully" });
+  } catch (err) {
+    error("Critical Error: " + err.message);
+    return res.json({ success: false, error: err.message }, 500);
+  }
 };
