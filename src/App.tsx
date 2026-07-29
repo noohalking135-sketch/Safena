@@ -38,7 +38,7 @@ export default function App() {
 
   const t = translations[lang];
 
-  // دالة لجلب الطلبات من Appwrite
+  // دالة لجلب الطلبات مباشرة من Appwrite وعرضها بأحدث حالة
   const fetchOrders = () => {
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
@@ -56,11 +56,8 @@ export default function App() {
           timer: 300,
         }));
         
-        // دمج الطلبات المحلية والجديدة مع إعطاء الأولوية لتحديثات Appwrite اللحظية
-        setOrders(prev => {
-          const localOrders = prev.filter(local => !appwriteOrders.some((remote: any) => remote.id === local.id));
-          return [...appwriteOrders, ...localOrders];
-        });
+        // الاعتماد الكلي على بيانات Appwrite المباشرة لتجنب أي تعارض قديم
+        setOrders(appwriteOrders);
       }
     }).catch(error => {
       console.error("Error fetching orders from Appwrite:", error);
@@ -71,19 +68,16 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem("noah_user");
       const savedAddresses = localStorage.getItem("noah_addresses");
-      const savedOrders = localStorage.getItem("noah_orders");
       
       if (savedUser) setUser(JSON.parse(savedUser));
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      // جلب الطلبات لأول مرة
+      // جلب الطلبات من السحابة مباشرة عند فتح التطبيق
       fetchOrders();
 
-      // تفعيل الاتصال اللحظي Realtime من Appwrite للتحديث الفوري عند أي تعديل في القاعدة
+      // تفعيل الاتصال اللحظي Realtime من Appwrite للتحديث الفوري تلقائياً
       const channel = `databases.${APPWRITE_DATABASE_ID}.collections.${ORDERS_TABLE_ID}.documents`;
       const unsubscribe = client.subscribe(channel, (response) => {
-        // إذا حدث تعديل (update) أو إنشاء (create) على أي مستند، نقوم بإعادة جلب الطلبات فوراً
         if (
           response.events.includes("databases.*.collections.*.documents.*.update") ||
           response.events.includes("databases.*.collections.*.documents.*.create")
@@ -108,10 +102,6 @@ export default function App() {
   useEffect(() => {
     if (addresses.length > 0) localStorage.setItem("noah_addresses", JSON.stringify(addresses));
   }, [addresses]);
-
-  useEffect(() => {
-    if (orders.length > 0) localStorage.setItem("noah_orders", JSON.stringify(orders));
-  }, [orders]);
 
   useEffect(() => {
     const timer = setInterval(() => {
