@@ -10,17 +10,13 @@ module.exports = async ({ req, res, log, error }) => {
 
     const databases = new sdk.Databases(client);
 
-    // استخراج بيانات الحدث القادم من Appwrite تلقائياً
-    const payload = req.payload ? JSON.parse(req.payload) : {};
     const eventHeader = req.headers['x-appwrite-event'] || '';
+    const payload = req.payload ? JSON.parse(req.payload) : {};
     
-    // إذا جاءت الوثيقة مباشرة مع الحدث (Document Payload)
+    // جلب البيانات سواء من حمولة الحدث مباشرة أو كأحدث وثيقة
     let doc = payload.document || payload;
 
-    // إذا لم تأتِ مباشرة، نقوم بجلبها باستخدام معرّفات الحدث الحقيقية الظاهرة في صورتك
     if (!doc.customer_name && !doc.customer && !doc.phone && !doc.customer_phone) {
-      // استخراج databaseId و collectionId من مسار الحدث (Event) تلقائياً
-      // مثال الحدث: databases.[DATABASE_ID].collections.[COLLECTION_ID].documents.[DOCUMENT_ID].create
       const parts = eventHeader.split('.');
       const dbId = parts[1] || '6a65915e00291cf7f54c';
       const colId = parts[3] || (eventHeader.includes('complaints') ? 'complaints' : 'orders');
