@@ -14,7 +14,7 @@ import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
 import { databases, client, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
-import { Query } from "appwrite";
+import { Query, ID } from "appwrite";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
@@ -29,7 +29,6 @@ export default function App() {
   const [flyingImages, setFlyingImages] = useState<{ id: number; src: string; from: { x: number; y: number }; to?: { x: number; y: number } }[]>([]);
   const cartRef = useRef<HTMLDivElement>(null);
 
-  // حالة لإخفاء زر اللغة عند النزول للأسفل
   const [showLangButton, setShowLangButton] = useState(true);
   const lastScrollTop = useRef(0);
   
@@ -38,7 +37,7 @@ export default function App() {
 
   const t = translations[lang];
 
-  // دالة لجلب الطلبات من Appwrite
+  // دالة لجلب الطلبات وترجمة القيم البرمجية إلى النصوص المعروضة للمستخدم
   const fetchOrders = () => {
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
@@ -46,21 +45,23 @@ export default function App() {
       [Query.orderDesc('$createdAt')]
     ).then(response => {
       if (response.documents) {
-        const appwriteOrders = response.documents.map((o: any) => ({
-          id: o.$id,
-          status: o.status,
-          total: o.total,
-          date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-          items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
-          location: o.location,
-          timer: 300,
-        }));
-        
-        // دمج الطلبات المحلية والجديدة مع إعطاء الأولوية لتحديثات Appwrite اللحظية
-        setOrders(prev => {
-          const localOrders = prev.filter(local => !appwriteOrders.some((remote: any) => remote.id === local.id));
-          return [...appwriteOrders, ...localOrders];
+        const appwriteOrders = response.documents.map((o: any) => {
+          let displayStatus = "قيد التحضير";
+          if (o.status === "onWay") displayStatus = "السائق في طريقه إليك";
+          else if (o.status === "delivered") displayStatus = "تم التوصيل";
+
+          return {
+            id: o.$id,
+            status: displayStatus,
+            rawStatus: o.status,
+            total: o.total,
+            date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+            items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+            location: o.location,
+            deliveredTimer: o.status === 'delivered' ? (o.deliveredTimer || 300) : null,
+          };
         });
+        setOrders(appwriteOrders);
       }
     }).catch(error => {
       console.error("Error fetching orders from Appwrite:", error);
@@ -71,22 +72,18 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem("noah_user");
       const savedAddresses = localStorage.getItem("noah_addresses");
-      const savedOrders = localStorage.getItem("noah_orders");
       
       if (savedUser) setUser(JSON.parse(savedUser));
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      // جلب الطلبات لأول مرة
       fetchOrders();
 
-      // تفعيل الاتصال اللحظي Realtime من Appwrite للتحديث الفوري عند أي تعديل في القاعدة
       const channel = `databases.${APPWRITE_DATABASE_ID}.collections.${ORDERS_TABLE_ID}.documents`;
       const unsubscribe = client.subscribe(channel, (response) => {
-        // إذا حدث تعديل (update) أو إنشاء (create) على أي مستند، نقوم بإعادة جلب الطلبات فوراً
         if (
           response.events.includes("databases.*.collections.*.documents.*.update") ||
-          response.events.includes("databases.*.collections.*.documents.*.create")
+          response.events.includes("databases.*.collections.*.documents.*.create") ||
+          response.events.includes("databases.*.collections.*.documents.*.delete")
         ) {
           fetchOrders();
         }
@@ -109,31 +106,34 @@ export default function App() {
     if (addresses.length > 0) localStorage.setItem("noah_addresses", JSON.stringify(addresses));
   }, [addresses]);
 
-  useEffect(() => {
-    if (orders.length > 0) localStorage.setItem("noah_orders", JSON.stringify(orders));
-  }, [orders]);
-
+  // مؤقت لإدارة العد التنازلي بعد تسليم الطلب وحذفه تلقائياً
   useEffect(() => {
     const timer = setInterval(() => {
-      setOrders(prev => prev.map(order => {
-        if (order.status === "preparing" && order.timer > 0) {
-          return { ...order, timer: order.timer - 1 };
-        } else if (order.status === "preparing" && order.timer === 0) {
-          return { ...order, status: "onWay" };
-        }
-        return order;
-      }));
+      setOrders(prev => {
+        return prev.map(order => {
+          if (order.rawStatus === "delivered") {
+            if (order.deliveredTimer === null) {
+              return { ...order, deliveredTimer: 300 };
+            } else if (order.deliveredTimer > 0) {
+              return { ...order, deliveredTimer: order.deliveredTimer - 1 };
+            } else if (order.deliveredTimer === 0) {
+              databases.deleteDocument(APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, order.id).catch(() => {});
+              return null;
+            }
+          }
+          return order;
+        }).filter(Boolean);
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // دالة مراقبة التمرير لإخفاء وإظهار زر اللغة
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const st = e.currentTarget.scrollTop;
     if (st > lastScrollTop.current && st > 50) {
-      setShowLangButton(false); // إخفاء عند النزول لأسفل
+      setShowLangButton(false);
     } else {
-      setShowLangButton(true); // إظهار عند الصعود لأعلى
+      setShowLangButton(true);
     }
     lastScrollTop.current = st <= 0 ? 0 : st;
   };
@@ -160,7 +160,7 @@ export default function App() {
     }, 800);
   };
 
-  const handleCheckoutConfirm = (location: string) => {
+  const handleCheckoutConfirm = async (location: string) => {
     setShowCheckout(false);
     
     const cartItems = Object.entries(cart).map(([id, qty]) => {
@@ -170,18 +170,26 @@ export default function App() {
     
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
-    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newOrder = {
-      id: orderId,
-      status: "قيد التحضير",
-      total,
-      date: new Date().toISOString().split('T')[0],
-      items: cartItems,
-      location,
-      timer: 300,
-    };
+    try {
+      // إرسال الطلب مع قيمة `preparing` المتوافقة حصرياً مع حقل Enum في قاعدة البيانات
+      await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        ORDERS_TABLE_ID,
+        ID.unique(),
+        {
+          status: "preparing", 
+          total: Number(total),
+          items: JSON.stringify(cartItems),
+          location: location || "",
+        }
+      );
+      
+      fetchOrders();
+    } catch (error: any) {
+      console.error("Error saving order to Appwrite:", error);
+      alert("خطأ أثناء إرسال الطلب: " + (error.message || error));
+    }
 
-    setOrders(prev => [newOrder, ...prev]);
     setCart({});
     setShowSuccess(true);
     setTimeout(() => {
