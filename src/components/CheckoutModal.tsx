@@ -8,7 +8,7 @@ import { ID, Functions } from "appwrite";
 import { cn } from "@/lib/utils";
 
 const functions = new Functions(client);
-const TELEGRAM_FUNCTION_ID = "telegram-bot"; // معرف دالة تليجرام في Appwrite
+const TELEGRAM_FUNCTION_ID = "telegram-bot"; // تأكد أن هذا يطابق معرف دالة تليجرام في Appwrite لديك
 
 export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, cartItems, cartTotal }: any) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
@@ -22,12 +22,20 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
 
     setIsSubmitting(true);
 
-    // تجهيز الأصناف كنص واضح
     const formattedItems = (cartItems || []).map((item: any) => {
       const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
       const qty = item.qty || item.quantity || 1;
       return `${nameVal} (x${qty})`;
     }).filter(Boolean).join(' / ');
+
+    const orderData = {
+      customer_name: user?.name || "عميل",
+      customer_phone: user?.phone || "0981412535",
+      total: Number(cartTotal) || 0,
+      items: formattedItems,
+      location: location || "الموقع",
+      status: "preparing"
+    };
 
     try {
       // 1. حفظ الطلب في قاعدة البيانات
@@ -35,30 +43,17 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
         ID.unique(),
-        {
-          customer_name: user?.name || "عميل",
-          customer_phone: user?.phone || "00000000",
-          total: Number(cartTotal) || 0,
-          items: formattedItems,
-          location: location || "الموقع",
-          status: "preparing"
-        }
+        orderData
       );
 
-      // 2. إرسال البيانات مباشرة إلى دالة تليجرام لتصل بالمعلومات الصحيحة فوراً
+      // 2. استدعاء دالة تليجرام مباشرة لتوصيل الرسالة فوراً
       try {
         await functions.createExecution(
           TELEGRAM_FUNCTION_ID,
-          JSON.stringify({
-            customer_name: user?.name || "عميل",
-            customer_phone: user?.phone || "00000000",
-            total: Number(cartTotal) || 0,
-            items: formattedItems,
-            location: location || "الموقع"
-          })
+          JSON.stringify(orderData)
         );
-      } catch (tgErr) {
-        console.error("Telegram function execution error:", tgErr);
+      } catch (fnErr) {
+        console.error("Telegram execution failed:", fnErr);
       }
 
       setIsSubmitting(false);
