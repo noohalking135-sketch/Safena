@@ -18,7 +18,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
 
     setIsSubmitting(true);
 
-    const payload = JSON.stringify({
+        const payload = JSON.stringify({
       documentId: 'unique()',
       data: {
         customer_name: user?.name || "عميل",
@@ -26,7 +26,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         total: Number(cartTotal) || 0,
         items: JSON.stringify(cartItems || []),
         location: location || "الموقع",
-        status: "قيد التحضير"
+        status: "preparing" // تم التعديل لتتوافق مع خيارات السيرفر
       }
     });
 
