@@ -1,28 +1,29 @@
 const fetch = require('node-fetch');
 
 module.exports = async ({ req, res, log, error }) => {
-  // التحقق أن الطلب قادم كـ Event من قاعدة البيانات
   if (req.headers['x-appwrite-event']) {
     try {
       const payload = JSON.parse(req.payload || '{}');
       
-      const customerName = payload.customer_name || payload.name || "عميل جديد";
-      const customerPhone = payload.phone || "غير محدد";
-      const orderLocation = payload.location || "غير محدد";
+      const customerName = payload.customer_name || "عميل جديد";
+      const customerPhone = payload.customer_phone || payload.phone || "غير محدد";
+      const location = payload.location || "غير محدد";
+      const items = payload.items || payload.details || "غير محدد";
+      const total = payload.total ? `💰 *المجموع:* ${payload.total}` : "";
       
-      // رسالة التنبيه التي ستصلك على تليجرام
       const message = `🚨 *طلب أو شكوى جديدة!*\n\n` +
                       `👤 *العميل:* ${customerName}\n` +
                       `📞 *الهاتف:* ${customerPhone}\n` +
-                      `📍 *الموقع:* ${orderLocation}`;
+                      `📍 *الموقع:* ${location}\n` +
+                      `📦 *التفاصيل:* ${items}\n` +
+                      (total ? `${total}\n` : "");
 
-      // بيانات تليجرام الخاصة بك
       const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
       const CHAT_ID = '1671413336';
 
       const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
       
-      const response = await fetch(url, {
+      await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -32,17 +33,12 @@ module.exports = async ({ req, res, log, error }) => {
         })
       });
 
-      const result = await response.json();
-      if (!result.ok) {
-        error("Telegram API Error: " + JSON.stringify(result));
-      }
-
-      return res.json({ success: true, message: "Notification sent successfully" });
+      return res.json({ success: true });
     } catch (err) {
-      error("Error processing webhook event: " + err.message);
+      error("Error: " + err.message);
       return res.json({ success: false, error: err.message }, 500);
     }
   }
 
-  return res.json({ success: true, message: "No event triggered" });
+  return res.json({ success: true });
 };
