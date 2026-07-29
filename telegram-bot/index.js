@@ -1,5 +1,8 @@
 const fetch = require('node-fetch');
 
+// ذاكرة مؤقتة داخل دالة Appwrite لحفظ معرف آخر طلب تم إرساله لمنع التكرار
+let lastSentOrderId = null;
+
 module.exports = async ({ req, res, log, error }) => {
   try {
     let payload = {};
@@ -9,35 +12,53 @@ module.exports = async ({ req, res, log, error }) => {
       payload = req.payload;
     }
 
-    log("Incoming Payload: " + JSON.stringify(payload));
-
+    // استخراج بيانات المستند من الـ payload القادم عبر الـ Event
     let data = payload.document || payload.current || payload.data || payload;
+    let orderId = data.$id || data.id;
 
-    // جلب أحدث طلب من قاعدة البيانات لضمان عدم ضياع أي بيانات ولتجنب الفراغ
-    const PROJECT_ID = '6a658f7200183d84195b';
-    const DATABASE_ID = '6a65915e00291cf7f54c';
-    
-    try {
-      const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderDesc(\$createdAt)=true`, {
-        headers: {
-          'X-Appwrite-Project': PROJECT_ID,
-          'Content-Type': 'application/json'
-        }
-      });
-      const dbResult = await dbResponse.json();
-      if (dbResult.documents && dbResult.documents.length > 0) {
-        const latestDoc = dbResult.documents[0];
-        // دمج البيانات لضمان أخذ أحدث تفاصيل صحيحة
-        data = { ...latestDoc, ...data };
-      }
-    } catch (dbErr) {
-      error("خطأ في جلب أحدث سجل: " + dbErr.message);
+    // التحقق العبقري: إذا كان هذا الطلب قد أُرسل مسبقاً، نتجاهله فوراً لتجنب التكرار!
+    if (orderId && orderId === lastSentOrderId) {
+      log(`Ignored duplicate event for order ID: ${orderId}`);
+      return res.json({ success: true, message: "Duplicate ignored" });
     }
 
-    const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
-    const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
-    const location = data.location || data.address || data.homeAddress || "غير محدد";
-    const items = data.items || data.details || data.subject || "لا توجد تفاصيل";
+    // إذا لم يأتِ الـ payload مباشرة، نجلب أحدث طلب أُضيف للقاعدة
+    if (!data || Object.keys(data).length === 0 || (!data.customer_name && !data.items)) {
+      const PROJECT_ID = '6a658f7200183d84195b';
+      const DATABASE_ID = '6a65915e00291cf7f54c';
+      
+      try {
+        const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderDesc(\$createdAt)=true`, {
+          headers: {
+            'X-Appwrite-Project': PROJECT_ID,
+            'Content-Type': 'application/json'
+          }
+        });
+        const dbResult = await dbResponse.json();
+        if (dbResult.documents && dbResult.documents.length > 0) {
+          data = dbResult.documents[0];
+          orderId = data.$id;
+        }
+      } catch (dbErr) {
+        error("خطأ في جلب أحدث سجل: " + dbErr.message);
+      }
+    }
+
+    // التحقق مرة أخرى بعد الجلب من القاعدة لمنع التكرار
+    if (orderId && orderId === lastSentOrderId) {
+      log(`Ignored duplicate fetch for order ID: ${orderId}`);
+      return res.json({ success: true, message: "Duplicate ignored" });
+    }
+
+    // حفظ معرف هذا الطلب الجديد في الذاكرة لكي لا يتكرر أبداً
+    if (orderId) {
+      lastSentOrderId = orderId;
+    }
+
+    const customerName = data.customer_name || data.customer || "عميل جديد";
+    const customerPhone = data.customer_phone || data.phone || "غير محدد";
+    const location = data.location || data.address || "غير محدد";
+    const items = data.items || data.details || "لا توجد تفاصيل";
     const total = data.total !== undefined && data.total !== null ? `💰 *المجموع:* ${data.total} ل.س` : "";
 
     const message = `🚨 *طلب أو شكوى جديدة عبر التطبيق!*\n\n` +
