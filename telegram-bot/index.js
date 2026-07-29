@@ -4,10 +4,10 @@ const sdk = require('node-appwrite');
 module.exports = async ({ req, res, log, error }) => {
   if (req.headers['x-appwrite-event']) {
     try {
-      // استخدام أدوات Appwrite الرسمية المدمجة في الدالة تلقائياً
+      // إعداد عميل Appwrite باستخدام معرّف مشروعك الصحيح
       const client = new sdk.Client()
         .setEndpoint('https://cloud.appwrite.io/v1')
-        .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
+        .setProject('66b7cfcd0022421dfc6e') // تأكد أنه يوافق Project ID الأساسي لمشروعك
         .setKey(req.headers['x-appwrite-key'] || process.env.APPWRITE_FUNCTION_API_KEY);
 
       const databases = new sdk.Databases(client);
@@ -15,7 +15,7 @@ module.exports = async ({ req, res, log, error }) => {
       const eventHeader = req.headers['x-appwrite-event'] || '';
       const collectionId = eventHeader.includes('orders') ? 'orders' : 'complaints';
 
-      // جلب أحدث وثيقة أُضيففت لقاعدة البيانات بدقة تامة
+      // جلب أحدث وثيقة أُضيففت لقاعدة البيانات
       const response = await databases.listDocuments(
         'main_db',
         collectionId,
@@ -23,11 +23,12 @@ module.exports = async ({ req, res, log, error }) => {
       );
 
       if (response.documents.length === 0) {
-        return res.json({ success: true });
+        return res.json({ success: true, message: "No documents found" });
       }
 
       const doc = response.documents[0];
 
+      // استخراج البيانات بدقة تامة من الوثيقة
       const customerName = doc.customer_name || doc.customer || doc.name || "عميل جديد";
       const customerPhone = doc.customer_phone || doc.phone || doc.mobile || "غير محدد";
       const location = doc.location || doc.address || "غير محدد";
