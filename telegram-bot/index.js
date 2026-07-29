@@ -3,10 +3,9 @@ const sdk = require('node-appwrite');
 
 module.exports = async ({ req, res, log, error }) => {
   try {
-    // استخدام معرّف المشروع الصحيح والمباشر
     const client = new sdk.Client()
       .setEndpoint('https://cloud.appwrite.io/v1')
-      .setProject('6a69915e00291cf7f54c') // معرّف المشروع المستخرج من إعدادات قاعدة البيانات لديك
+      .setProject('6a658f7200183d84195b') // معرّف المشروع الصحيح والمطابق تماماً
       .setKey(req.headers['x-appwrite-key'] || process.env.APPWRITE_FUNCTION_API_KEY);
 
     const databases = new sdk.Databases(client);
