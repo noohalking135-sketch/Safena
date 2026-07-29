@@ -19,7 +19,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
 
     setIsSubmitting(true);
 
-    // تجهيز الأصناف كنص واضح
     const formattedItems = (cartItems || []).map((item: any) => {
       const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
       const qty = item.qty || item.quantity || 1;
@@ -27,9 +26,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
     }).filter(Boolean).join(' / ');
 
     try {
-      // حفظ بيانات العميل ورقم هاتفه ومعرفه لضمان فلترة الطلبات لاحقاً
       const userPhone = user?.phone || user?.phoneNumber || "0981412535";
-      const userId = user?.$id || user?.id || userPhone;
 
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
@@ -38,7 +35,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         {
           customer_name: user?.name || "عميل",
           customer_phone: userPhone,
-          userId: userId,
           total: Number(cartTotal) || 0,
           items: formattedItems,
           location: location || "الموقع",
