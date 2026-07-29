@@ -10,13 +10,12 @@ module.exports = async ({ req, res, log, error }) => {
     }
 
     log("Incoming Payload: " + JSON.stringify(payload));
-    let data = payload.document || payload.current || payload.data || payload;
 
-    const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
-    const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
-    const location = data.location || data.address || data.homeAddress || "غير محدد";
-    const items = data.items || data.details || data.subject || "لا توجد تفاصيل";
-    const total = data.total !== undefined && data.total !== null ? `💰 *المجموع:* ${data.total} ل.س` : "";
+    const customerName = payload.customer_name || "عميل جديد";
+    const customerPhone = payload.customer_phone || "غير محدد";
+    const location = payload.location || "غير محدد";
+    const items = payload.items || "لا توجد تفاصيل";
+    const total = payload.total !== undefined && payload.total !== null ? `💰 *المجموع:* ${payload.total} ل.س` : "";
 
     const message = `🚨 *طلب أو شكوى جديدة عبر التطبيق!*\n\n` +
                     `👤 *العميل:* ${customerName}\n` +
@@ -35,11 +34,14 @@ module.exports = async ({ req, res, log, error }) => {
     });
 
     const tgData = await tgRes.json();
-    if (!tgData.ok) error("فشل تليجرام: " + JSON.stringify(tgData));
+    if (!tgData.ok) {
+      error("فشل إرسال تليجرام: " + JSON.stringify(tgData));
+      return res.json({ success: false, telegram_error: tgData }, 500);
+    }
 
     return res.json({ success: true });
   } catch (err) {
-    error("خطأ حرج: " + err.message);
+    error("خطأ حرج في الدالة: " + err.message);
     return res.json({ success: false, error: err.message }, 500);
   }
 };
