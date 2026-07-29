@@ -152,7 +152,7 @@ export const translations = {
     darkMode: "Dark Mode",
     lightMode: "Light Mode",
     whatsappSupport: "Contact via WhatsApp",
-    whatsappNumber: "0959213962",
+    whatsappNumber: "+963959213962",
     addAddress: "Add New Address",
     editAddress: "Edit Address",
     addressLabel: "Address Label (e.g., Home, Work)",
