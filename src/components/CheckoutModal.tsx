@@ -3,12 +3,9 @@ import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, client } from "@/lib/appwrite";
-import { ID, Functions } from "appwrite";
+import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
+import { ID } from "appwrite";
 import { cn } from "@/lib/utils";
-
-const functions = new Functions(client);
-const TELEGRAM_FUNCTION_ID = "telegram-bot"; // تأكد أن هذا يطابق معرف دالة تليجرام في Appwrite لديك
 
 export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, cartItems, cartTotal }: any) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
@@ -28,39 +25,22 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
       return `${nameVal} (x${qty})`;
     }).filter(Boolean).join(' / ');
 
-        const orderData = {
-      customer_name: user?.name || user?.fullName || "زائر",
-      customer_phone: user?.phone || user?.mobile || "",
+    const orderData = {
+      customer_name: user?.name || "عميل",
+      customer_phone: user?.phone || "0981412535",
       total: Number(cartTotal) || 0,
       items: formattedItems,
       location: location || "الموقع",
       status: "preparing"
     };
 
-    // منع الإرسال إذا كان الهاتف فارغاً لضمان عدم اختلاط الهويات
-    if (!orderData.customer_phone) {
-      alert("يرجى التأكد من تسجيل رقم الهاتف في الحساب.");
-      setIsSubmitting(false);
-      return;
-    }
     try {
-      // 1. حفظ الطلب في قاعدة البيانات
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
         ID.unique(),
         orderData
       );
-
-      // 2. استدعاء دالة تليجرام مباشرة لتوصيل الرسالة فوراً
-      try {
-        await functions.createExecution(
-          TELEGRAM_FUNCTION_ID,
-          JSON.stringify(orderData)
-        );
-      } catch (fnErr) {
-        console.error("Telegram execution failed:", fnErr);
-      }
 
       setIsSubmitting(false);
       onConfirm(location);
