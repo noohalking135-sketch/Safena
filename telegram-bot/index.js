@@ -3,7 +3,6 @@ const fetch = require('node-fetch');
 module.exports = async ({ req, res, log, error }) => {
   try {
     let payload = {};
-    
     if (typeof req.payload === 'string') {
       try { payload = JSON.parse(req.payload); } catch (e) { payload = {}; }
     } else if (typeof req.payload === 'object' && req.payload !== null) {
@@ -11,33 +10,7 @@ module.exports = async ({ req, res, log, error }) => {
     }
 
     log("Incoming Payload: " + JSON.stringify(payload));
-
     let data = payload.document || payload.current || payload.data || payload;
-
-    // إذا كان الـ payload فارغاً، نقوم بجلب أحدث سجل من قاعدة البيانات مع الترتيب الصحيح
-    if (!data || Object.keys(data).length === 0 || (!data.customer_name && !data.items && !data.customer)) {
-      log("Payload is empty. Fetching the latest document from database...");
-      
-      const PROJECT_ID = '6a658f7200183d84195b';
-      const DATABASE_ID = '6a65915e00291cf7f54c';
-      
-      try {
-        // استخدام الترتيب التنازلي الصحيح حسب تاريخ الإنشاء
-        const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderDesc(\$createdAt)=true`, {
-          headers: {
-            'X-Appwrite-Project': PROJECT_ID,
-            'Content-Type': 'application/json'
-          }
-        });
-        const dbResult = await dbResponse.json();
-        if (dbResult.documents && dbResult.documents.length > 0) {
-          data = dbResult.documents[0];
-          log("Successfully fetched latest order from DB.");
-        }
-      } catch (dbErr) {
-        error("خطأ في جلب أحدث سجل: " + dbErr.message);
-      }
-    }
 
     const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
     const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
@@ -58,22 +31,15 @@ module.exports = async ({ req, res, log, error }) => {
     const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: 'Markdown'
-      })
+      body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' })
     });
 
     const tgData = await tgRes.json();
-    if (!tgData.ok) {
-      error("فشل إرسال تليجرام: " + JSON.stringify(tgData));
-      return res.json({ success: false, telegram_error: tgData }, 500);
-    }
+    if (!tgData.ok) error("فشل تليجرام: " + JSON.stringify(tgData));
 
     return res.json({ success: true });
   } catch (err) {
-    error("خطأ حرج في الدالة: " + err.message);
+    error("خطأ حرج: " + err.message);
     return res.json({ success: false, error: err.message }, 500);
   }
 };
