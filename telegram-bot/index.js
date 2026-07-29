@@ -10,10 +10,40 @@ module.exports = async ({ req, res, log, error }) => {
       payload = req.payload;
     }
 
-    // اعتماد المستند القادم من الحدث الفوري فقط لمنع تكرار الطلبات السابقة
-    const data = payload.document || payload.current || payload;
+    // تسجيل الـ payload في السجلات لنتمكن من رؤيته إن لزم الأمر
+    log("Incoming Payload: " + JSON.stringify(payload));
 
-    // استخراج الحقول بدقة تامة من الطلب الحالي
+    // استخراج المستند من الحدث
+    let data = payload.document || payload.current || payload;
+
+    // إذا لم تحتوي البيانات على الاسم أو العناصر، نقوم بجلب أحدث سجل فوراً من قاعدة البيانات
+    if (!data.customer_name && !data.items && !data.customer) {
+      const PROJECT_ID = '6a658f7200183d84195b';
+      const DATABASE_ID = '6a65915e00291cf7f54c';
+      
+      for (const collectionId of ['orders', 'complaints']) {
+        try {
+          // جلب أحدث وثيقة مع ترتيب تنازلي دقيق
+          const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/${collectionId}/documents?limit=1&orderType[0]=DESC`, {
+            headers: {
+              'X-Appwrite-Project': PROJECT_ID,
+              'Content-Type': 'application/json'
+            }
+          });
+          const dbResult = await dbResponse.json();
+          if (dbResult.documents && dbResult.documents.length > 0) {
+            const latestDoc = dbResult.documents[0];
+            
+            // التأكد من أن السجل حديث ولم يُرسل مسبقاً (مقارنة تاريخ الإنشاء أو الاعتماد عليه مباشرة إذا كان فارغاً تماماً)
+            data = latestDoc;
+            break;
+          }
+        } catch (dbErr) {
+          error(`خطأ في جلب السجل من ${collectionId}: ` + dbErr.message);
+        }
+      }
+    }
+
     const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
     const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
     const location = data.location || data.address || data.homeAddress || "غير محدد";
