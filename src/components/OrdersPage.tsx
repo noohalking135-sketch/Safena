@@ -5,29 +5,29 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
-  // دالة لتحديد النصوص والألوان حسب الحالة القادمة من Appwrite (سواء باللغة العربية أو الإنجليزية)
+  // دالة لتحويل القيم الإنجليزية القادمة من قاعدة البيانات إلى نصوص واجهة المستخدم المناسبة
   const getStatusInfo = (rawStatus: string) => {
-    const status = rawStatus ? rawStatus.trim() : "قيد التحضير";
+    const status = rawStatus ? rawStatus.trim() : "preparing";
     
-    if (status === "في الطريق" || status === "onWay" || status === "delivering" || status === "on_way") {
+    if (status === "onWay" || status === "في الطريق" || status === "delivering" || status === "on_way") {
       return {
-        label: t.statusOnWay || "في الطريق",
+        label: t.statusOnWay || "السائق في طريقه إليك",
         color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
       };
     }
-    if (status === "تم التوصيل" || status === "delivered" || status === "completed") {
+    if (status === "delivered" || status === "تم التوصيل" || status === "completed") {
       return {
         label: t.statusDelivered || "تم التوصيل",
         color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
       };
     }
-    if (status === "ملغي" || status === "cancelled") {
+    if (status === "cancelled" || status === "ملغي") {
       return {
         label: t.statusCancelled || "ملغي",
         color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
       };
     }
-    // الحالة الافتراضية: قيد التحضير
+    // الحالة الافتراضية لقيد التحضير
     return {
       label: t.statusPreparing || "قيد التحضير",
       color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
@@ -79,7 +79,6 @@ export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
                 <CardContent className="p-4 pt-0">
                   <div className="mb-3 flex flex-wrap gap-2">
                     {order.items && typeof order.items === 'string' ? (
-                      // إذا كانت الأصناف مخزنة كنص JSON في Appwrite
                       <span className="text-xs text-slate-600 dark:text-slate-300">تفاصيل الأصناف مسجلة</span>
                     ) : (
                       order.items?.map((item: any, idx: number) => (
