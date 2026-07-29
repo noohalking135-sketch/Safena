@@ -37,14 +37,16 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
     <div className="flex flex-col gap-6 p-4 pt-4">
       {/* هيدر يحتوي على الشعار في الزاوية ووصف التطبيق */}
       <header className="flex items-center justify-between pt-2">
-        <div className="flex flex-col">
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
-        </div>
+            {/* هيدر يحتوي على الشعار في الزاوية المطلوبة ووصف التطبيق */}
+      <header className="flex items-center justify-between pt-2 flex-row-reverse">
         <img 
           src="/logo.png" 
           alt="سفينة نوح" 
           className="h-14 w-auto object-contain drop-shadow-sm" 
         />
+        <div className="flex flex-col">
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
+        </div>
       </header>
 
       <div className="relative">
