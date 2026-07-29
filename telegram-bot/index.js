@@ -5,11 +5,10 @@ module.exports = async ({ req, res, log, error }) => {
     try {
       const payload = JSON.parse(req.payload || '{}');
       
-      // محاولة استخراج البيانات مباشرة من الحدث (إذا أرسلها Appwrite)
+      // جلب البيانات سواء كانت من الحدث مباشرة أو عبر جلب آخر وثيقة
       let data = payload.document || payload;
 
-      // إذا كانت البيانات فارغة، نقوم بجلب أحدث طلب أو شكوى مباشرة عبر REST API الخاص بـ Appwrite
-      if (!data.customer_name && !data.customer_phone) {
+      if (!data.customer_name && !data.customer && !data.customer_phone) {
         const eventHeader = req.headers['x-appwrite-event'] || '';
         const collectionId = eventHeader.includes('orders') ? 'orders' : 'complaints';
         
@@ -26,9 +25,10 @@ module.exports = async ({ req, res, log, error }) => {
         }
       }
 
-      const customerName = data.customer_name || data.name || "عميل جديد";
-      const customerPhone = data.customer_phone || data.phone || "غير محدد";
-      const location = data.location || "غير محدد";
+      // دعم كافة أسماء الحقول المحتملة لتجنب أي خطأ مستقبلاً
+      const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
+      const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
+      const location = data.location || data.address || data.homeAddress || "غير محدد";
       const items = data.items || data.details || data.subject || "غير محدد";
       const total = data.total ? `💰 *المجموع:* ${data.total}` : "";
 
