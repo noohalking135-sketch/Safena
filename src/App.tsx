@@ -16,7 +16,6 @@ import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
 import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
 import { Query } from "appwrite";
-import { cn } from "@/lib/utils";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
@@ -48,7 +47,6 @@ export default function App() {
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      // جلب الطلبات من Appwrite
       databases.listDocuments(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
@@ -158,12 +156,13 @@ export default function App() {
   };
 
   const pageIndex = getPageIndex(page);
-  const directionMultiplier = lang === "ar" ? 1 : -1;
+  // تثبيت اتجاه الحركة بحيث لا ينعكس عند تغيير اللغة
+  const directionMultiplier = 1; 
   const translateXValue = pageIndex * 100 * directionMultiplier;
 
   if (!user) {
     return (
-      <div dir={lang === "ar" ? "rtl" : "ltr"} className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
+      <div dir="rtl" className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
         <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
           <div className="absolute end-4 top-4 z-50 flex gap-2">
             <ThemeToggle theme={theme} setTheme={setTheme} />
@@ -183,7 +182,7 @@ export default function App() {
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
+    <div dir="rtl" className={theme === 'light' ? 'bg-slate-50 text-slate-900 min-h-screen' : 'bg-slate-950 text-white min-h-screen'}>
       <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
         
         <div className="absolute end-4 top-4 z-50 flex gap-2">
