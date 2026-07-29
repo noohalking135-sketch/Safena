@@ -47,10 +47,6 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
         </div>
       </header>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-        <Input placeholder={t.searchPlaceholder} className="rounded-xl border-yellow-200 bg-white py-6 pl-10 text-slate-800 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
-      </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.categories}</h2>
