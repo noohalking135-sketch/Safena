@@ -108,7 +108,7 @@ export default function App() {
   }, [addresses]);
 
 
-      useEffect(() => {
+        useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prev => {
         return prev.map(order => {
@@ -128,8 +128,21 @@ export default function App() {
             const remaining = 300 - elapsedSeconds;
 
             if (remaining <= 0) {
+              // مسح المفتاح من الذاكرة المحلية فوراً لمنع تكراره
               localStorage.removeItem(timeKey);
-              databases.deleteDocument(APPWRITE_DATABASE_ID, ORDERS_TABLE_ID, orderKey).catch(() => {});
+              
+              // حذف الطلب نهائياً من قاعدة بيانات Appwrite
+              databases.deleteDocument(
+                APPWRITE_DATABASE_ID,
+                ORDERS_TABLE_ID,
+                orderKey
+              ).then(() => {
+                console.log("Order deleted successfully from Appwrite");
+              }).catch((err) => {
+                console.error("Failed to delete order from Appwrite:", err);
+              });
+
+              // إزالته تماماً من قائمة الطلبات في الواجهة
               return null;
             }
 
