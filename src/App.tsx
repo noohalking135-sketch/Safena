@@ -1,4 +1,4 @@
-import './index.css';
+Import './index.css';
 import { useState, useEffect, useRef } from "react";
 import { ShoppingBag } from "lucide-react";
 import { HomePage } from "@/components/HomePage";
@@ -14,7 +14,7 @@ import { SuccessModal } from "@/components/SuccessModal";
 import { mockProducts } from "@/lib/data";
 import { translations } from "@/lib/i18n";
 import { databases, client, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
-import { Query, ID } from "appwrite";
+import { Query } from "appwrite";
 
 export type Lang = "ar" | "en";
 export type Page = "home" | "orders" | "complaints" | "account";
@@ -38,7 +38,7 @@ export default function App() {
 
   const t = translations[lang];
 
-  // دالة لجلب الطلبات مباشرة من Appwrite
+  // دالة لجلب الطلبات من Appwrite
   const fetchOrders = () => {
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
@@ -55,7 +55,12 @@ export default function App() {
           location: o.location,
           timer: 300,
         }));
-        setOrders(appwriteOrders);
+        
+        // دمج الطلبات المحلية والجديدة مع إعطاء الأولوية لتحديثات Appwrite اللحظية
+        setOrders(prev => {
+          const localOrders = prev.filter(local => !appwriteOrders.some((remote: any) => remote.id === local.id));
+          return [...appwriteOrders, ...localOrders];
+        });
       }
     }).catch(error => {
       console.error("Error fetching orders from Appwrite:", error);
@@ -66,16 +71,19 @@ export default function App() {
     try {
       const savedUser = localStorage.getItem("noah_user");
       const savedAddresses = localStorage.getItem("noah_addresses");
+      const savedOrders = localStorage.getItem("noah_orders");
       
       if (savedUser) setUser(JSON.parse(savedUser));
       if (savedAddresses) setAddresses(JSON.parse(savedAddresses));
+      if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-      // جلب الطلبات من السحابة مباشرة عند فتح التطبيق
+      // جلب الطلبات لأول مرة
       fetchOrders();
 
-      // تفعيل الاتصال اللحظي Realtime من Appwrite للتحديث الفوري تلقائياً
+      // تفعيل الاتصال اللحظي Realtime من Appwrite للتحديث الفوري عند أي تعديل في القاعدة
       const channel = `databases.${APPWRITE_DATABASE_ID}.collections.${ORDERS_TABLE_ID}.documents`;
       const unsubscribe = client.subscribe(channel, (response) => {
+        // إذا حدث تعديل (update) أو إنشاء (create) على أي مستند، نقوم بإعادة جلب الطلبات فوراً
         if (
           response.events.includes("databases.*.collections.*.documents.*.update") ||
           response.events.includes("databases.*.collections.*.documents.*.create")
@@ -100,6 +108,10 @@ export default function App() {
   useEffect(() => {
     if (addresses.length > 0) localStorage.setItem("noah_addresses", JSON.stringify(addresses));
   }, [addresses]);
+
+  useEffect(() => {
+    if (orders.length > 0) localStorage.setItem("noah_orders", JSON.stringify(orders));
+  }, [orders]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -148,8 +160,7 @@ export default function App() {
     }, 800);
   };
 
-  // تعديل دالة إتمام الطلب لإرساله وحفظه مباشرة في قاعدة بيانات Appwrite
-  const handleCheckoutConfirm = async (location: string) => {
+  const handleCheckoutConfirm = (location: string) => {
     setShowCheckout(false);
     
     const cartItems = Object.entries(cart).map(([id, qty]) => {
@@ -159,26 +170,18 @@ export default function App() {
     
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     
-    try {
-      // حفظ الطلب الجديد في قاعدة بيانات Appwrite بشكل دائم
-      await databases.createDocument(
-        APPWRITE_DATABASE_ID,
-        ORDERS_TABLE_ID,
-        ID.unique(),
-        {
-          status: "قيد التحضير",
-          total: Number(total),
-          items: JSON.stringify(cartItems),
-          location: location || "",
-        }
-      );
-      
-      // جلب الطلبات المحدثة بعد الحفظ
-      fetchOrders();
-    } catch (error) {
-      console.error("Error saving order to Appwrite:", error);
-    }
+    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newOrder = {
+      id: orderId,
+      status: "قيد التحضير",
+      total,
+      date: new Date().toISOString().split('T')[0],
+      items: cartItems,
+      location,
+      timer: 300,
+    };
 
+    setOrders(prev => [newOrder, ...prev]);
     setCart({});
     setShowSuccess(true);
     setTimeout(() => {
