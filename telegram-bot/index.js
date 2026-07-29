@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
-// ذاكرة مؤقتة داخل دالة Appwrite لحفظ معرف آخر طلب تم إرساله لمنع التكرار
-let lastSentOrderId = null;
+// تخزين آخر بضع طلبات لمنع التكرار اللحظي فقط خلال دقيقة واحدة
+let recentOrders = new Map();
 
 module.exports = async ({ req, res, log, error }) => {
   try {
@@ -12,12 +12,21 @@ module.exports = async ({ req, res, log, error }) => {
       payload = req.payload;
     }
 
-    // استخراج بيانات المستند من الـ payload القادم عبر الـ Event
+    log("Incoming Payload: " + JSON.stringify(payload));
+
     let data = payload.document || payload.current || payload.data || payload;
     let orderId = data.$id || data.id;
 
-    // التحقق العبقري: إذا كان هذا الطلب قد أُرسل مسبقاً، نتجاهله فوراً لتجنب التكرار!
-    if (orderId && orderId === lastSentOrderId) {
+    // تنظيف الطلبات القديمة من الذاكرة (أقدم من دقيقة)
+    const now = Date.now();
+    for (let [id, timestamp] of recentOrders.entries()) {
+      if (now - timestamp > 60000) {
+        recentOrders.delete(id);
+      }
+    }
+
+    // إذا تم إرسال نفس الطلب بالضبط خلال آخر دقيقة، نتجاهله
+    if (orderId && recentOrders.has(orderId)) {
       log(`Ignored duplicate event for order ID: ${orderId}`);
       return res.json({ success: true, message: "Duplicate ignored" });
     }
@@ -44,15 +53,8 @@ module.exports = async ({ req, res, log, error }) => {
       }
     }
 
-    // التحقق مرة أخرى بعد الجلب من القاعدة لمنع التكرار
-    if (orderId && orderId === lastSentOrderId) {
-      log(`Ignored duplicate fetch for order ID: ${orderId}`);
-      return res.json({ success: true, message: "Duplicate ignored" });
-    }
-
-    // حفظ معرف هذا الطلب الجديد في الذاكرة لكي لا يتكرر أبداً
     if (orderId) {
-      lastSentOrderId = orderId;
+      recentOrders.set(orderId, now);
     }
 
     const customerName = data.customer_name || data.customer || "عميل جديد";
