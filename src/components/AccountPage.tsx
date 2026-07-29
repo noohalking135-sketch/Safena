@@ -25,17 +25,17 @@ export function AccountPage({ t, lang, user, setUser, addresses, setAddresses }:
     <div className="flex flex-col gap-4 p-4 pt-12">
       <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.account}</h1>
       <Card className="border-yellow-100 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-sm dark:border-yellow-900/30 dark:from-yellow-900/10 dark:to-amber-900/10">
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-yellow-400 text-2xl font-bold text-slate-800 shadow-md">
-            {user.name.charAt(0)}
-          </div>
-          <div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">{t.welcomeBack}</p>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{user.name}</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400" dir="ltr">{user.phone}</p>
-          </div>
-        </CardContent>
-      </Card>
+  <CardContent className="flex items-center gap-4 p-4">
+    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-yellow-400 text-2xl font-bold text-slate-800 shadow-md">
+      {user.name.charAt(0)}
+    </div>
+    <div>
+      <p className="text-xs text-slate-600 dark:text-slate-400">{t.welcomeBack}</p>
+      <h2 className="text-lg font-bold text-slate-900 dark:text-white">{user.name}</h2>
+      <p className="text-xs text-slate-500 dark:text-slate-400" dir="ltr">{user.phone}</p>
+    </div>
+  </CardContent>
+</Card>
       <div className="flex flex-col gap-2">
         {menuItems.map((item) => (
           <button 
