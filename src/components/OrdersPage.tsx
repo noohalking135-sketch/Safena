@@ -3,19 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
+       
 export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
-  // دالة لتحويل القيم الإنجليزية القادمة من قاعدة البيانات إلى نصوص واجهة المستخدم المناسبة
   const getStatusInfo = (rawStatus: string) => {
-    const status = rawStatus ? rawStatus.trim() : "preparing";
+    const status = rawStatus ? rawStatus.trim().toLowerCase() : "preparing";
     
-    if (status === "onWay" || status === "في الطريق" || status === "delivering" || status === "on_way") {
+    // شروط شاملة لكافة الاحتمالات (الإنجليزية والعربية) لتجنب خطأ عدم التفاعل
+    if (status === "onway" || status === "on_way" || status === "delivering" || status === "في الطريق") {
       return {
         label: t.statusOnWay || "السائق في طريقه إليك",
         color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
       };
     }
-    if (status === "delivered" || status === "تم التوصيل" || status === "completed") {
+    if (status === "delivered" || status === "completed" || status === "تم التوصيل") {
       return {
         label: t.statusDelivered || "تم التوصيل",
         color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
@@ -27,7 +27,6 @@ export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
         color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
       };
     }
-    // الحالة الافتراضية لقيد التحضير
     return {
       label: t.statusPreparing || "قيد التحضير",
       color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
@@ -53,7 +52,9 @@ export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
         <div className="flex flex-col gap-3">
           {orders.map((order: any) => {
             const statusInfo = getStatusInfo(order.status);
-            const orderId = order.id || order.$id?.slice(-4);
+            // اقتطاع المعرف ليعرض آخر 4 خانات فقط بشكل أنيق
+            const fullId = order.$id || order.id || "";
+            const orderId = fullId.length > 4 ? fullId.slice(-4) : fullId;
 
             return (
               <Card 
@@ -89,14 +90,17 @@ export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
                     )}
                   </div>
                   
-                  {/* عرض معلومات السائق إذا كان الطلب في الطريق */}
-                  {(order.status === "onWay" || order.status === "في الطريق" || order.status === "on_way") && (
+                  {/* عرض معلومات السائق إذا كان الطلب في الطريق (دعم جميع المسميات) */}
+                  {(() => {
+                    const st = (order.status || "").trim().toLowerCase();
+                    return (st === "onway" || st === "on_way" || st === "delivering" || st === "في الطريق");
+                  })() && (
                     <div className="mb-3 flex items-center gap-3 rounded-xl bg-blue-50 p-3 dark:bg-blue-900/20" onClick={(e) => e.stopPropagation()}>
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-200/50 dark:bg-blue-900/40">
                         <Bike className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">{t.captainName}</p>
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">{t.captainName || "السائق"}</p>
                         <p className="text-sm font-bold text-slate-900 dark:text-white" dir="ltr">+963 959 213 962</p>
                       </div>
                       <a href="tel:+963959213962">
@@ -107,8 +111,21 @@ export function OrdersPage({ t, lang, orders, setPage, onSelectOrder }: any) {
                     </div>
                   )}
 
+                  {/* إظهار مؤقت العد التنازلي عند التوصيل (delivered) */}
+                  {(() => {
+                    const st = (order.status || "").trim().toLowerCase();
+                    return (st === "delivered" || st === "completed" || st === "تم التوصيل");
+                  })() && (
+                    <div className="mb-3 flex items-center justify-between rounded-xl bg-green-50 p-3 dark:bg-green-900/20 text-green-800 dark:text-green-300 text-xs font-medium">
+                      <span>الطلب انتهى وسيختفي خلال:</span>
+                      <span className="font-bold font-mono text-sm">
+                        {Math.floor((order.deliveredTimer ?? 300) / 60)}:{((order.deliveredTimer ?? 300) % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400 mt-2 border-t border-slate-100 dark:border-slate-700/50 pt-3">
-                    <span>{order.items?.length || 1} {t.items}</span>
+                    <span>{order.items?.length || 1} {t.items || "أصناف"}</span>
                     <span className="font-bold text-slate-900 dark:text-white">{order.total} {t.currency}</span>
                   </div>
                 </CardContent>
