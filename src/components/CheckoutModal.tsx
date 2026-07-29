@@ -1,4 +1,4 @@
-import { useState } from "react"; 
+import { useState } from "react";
 import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
