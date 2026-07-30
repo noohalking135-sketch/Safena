@@ -33,6 +33,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         {
           customer_name: user?.name || "عميل",
           customer_phone: user?.phone || "00000000",
+          user_id: user?.$id || user?.id || "",
           total: Number(cartTotal) || 0,
           items: formattedItems,
           location: location || "الموقع",
