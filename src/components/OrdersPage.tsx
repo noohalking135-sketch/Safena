@@ -22,16 +22,14 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
           return;
         }
 
-        const phoneTrimmed = user.phone.trim();
-
         const response = await databases.listDocuments(
-          APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.ordersCollectionId,
-          [
-            Query.equal('customer_phone', phoneTrimmed),
-            Query.orderDesc('$createdAt')
-          ]
-        );
+  APPWRITE_CONFIG.databaseId,
+  APPWRITE_CONFIG.ordersCollectionId,
+  [
+    Query.equal('user_id', user.$id || user.id),
+    Query.orderDesc('$createdAt')
+  ]
+);
 
         setOrders(response.documents);
       } catch (error) {
