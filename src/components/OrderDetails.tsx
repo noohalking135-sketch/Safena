@@ -7,10 +7,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { OrderMap } from "@/components/OrderMap";
 
 export function OrderDetails({ order, t }: { order: any; t: any }) {
-  // قراءة الحالة القادمة من عمود status في Appwrite (سواء كانت بالعربية أو الإنجليزية)
   const rawStatus = order.status ? order.status.trim() : "قيد التحضير";
 
-  // خريطة لتحديد الألوان والأيقونات بناءً على القيمة المخزنة في قاعدة البيانات
   const getStatusConfig = (status: string) => {
     if (status === "في الطريق" || status === "delivering" || status === "on_way") {
       return { label: t?.statusOnWay || "في الطريق", color: "bg-blue-100 text-blue-700", icon: Bike };
@@ -18,24 +16,23 @@ export function OrderDetails({ order, t }: { order: any; t: any }) {
     if (status === "تم التوصيل" || status === "completed" || status === "delivered") {
       return { label: t?.statusDelivered || "تم التوصيل", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 };
     }
-    // الحالة الافتراضية: قيد التحضير
     return { label: t?.statusPreparing || "قيد التحضير", color: "bg-amber-100 text-amber-700", icon: UtensilsCrossed };
   };
 
   const config = getStatusConfig(rawStatus);
   const StatusIcon = config.icon;
 
-  // تحديد المراحل المكتملة بناءً على الحالة الحقيقية من Appwrite
   const isDelivered = rawStatus === "تم التوصيل" || rawStatus === "completed" || rawStatus === "delivered";
   const isOnWay = rawStatus === "في الطريق" || rawStatus === "delivering" || rawStatus === "on_way" || isDelivered;
 
   return (
     <div className="p-5" dir="rtl">
-      {/* Order header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-slate-400">رقم الطلب</p>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white">#{order.id || order.$id?.slice(-4)}</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+            #{order.id ? order.id.slice(-4) : (order.$id ? order.$id.slice(-4) : 'جديد')}
+          </h3>
         </div>
         <Badge className={`${config.color} border-0 px-3 py-1 font-medium`}>
           <StatusIcon className="ms-1 h-3.5 w-3.5" />
