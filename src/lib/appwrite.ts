@@ -1,7 +1,7 @@
 import { Client, Databases } from 'appwrite';
 
 export const APPWRITE_CONFIG = {
-  endpoint: 'https://cloud.appwrite.io/v1',
+  endpoint: 'https://tor.cloud.appwrite.io/v1',
   projectId: '6a658f7200183d84195b', // المعرّف الصحيح للمشروع الجديد
   databaseId: '6a65915e00291cf7f54c', // معرّف قاعدة البيانات لديك
   ordersCollectionId: 'orders',
