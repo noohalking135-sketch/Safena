@@ -3,7 +3,7 @@ import { CheckCircle2, Home, Briefcase, Navigation, Send, X } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { databases, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
+import { databases, account, APPWRITE_DATABASE_ID, ORDERS_TABLE_ID } from "@/lib/appwrite";
 import { ID } from "appwrite";
 import { cn } from "@/lib/utils";
 
@@ -13,19 +13,26 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
   const [isNew, setIsNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleConfirm = async () => {
+    const handleConfirm = async () => {
     const location = isNew ? newLocation.trim() : selectedLocation;
     if (!location) return;
 
     setIsSubmitting(true);
 
-    const formattedItems = (cartItems || []).map((item: any) => {
-      const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
-      const qty = item.qty || item.quantity || 1;
-      return `${nameVal} (x${qty})`;
-    }).filter(Boolean).join(' / ');
-
     try {
+      // جلب معرف المستخدم الحالي مباشرة لضمان عدم وصوله فارغاً
+      let currentUserId = user?.$id || user?.id;
+      if (!currentUserId) {
+        const currentUser = await account.get();
+        currentUserId = currentUser.$id;
+      }
+
+      const formattedItems = (cartItems || []).map((item: any) => {
+        const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
+        const qty = item.qty || item.quantity || 1;
+        return `${nameVal} (x${qty})`;
+      }).filter(Boolean).join(' / ');
+
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
@@ -33,7 +40,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         {
           customer_name: user?.name || "عميل",
           customer_phone: user?.phone || "00000000",
-          user_id: user?.$id || user?.id || "",
+          user_id: currentUserId, // سيتم إرسال معرف المستخدم الحقيقي هنا ولن يكون فارغاً أبداً
           total: Number(cartTotal) || 0,
           items: formattedItems,
           location: location || "الموقع",
