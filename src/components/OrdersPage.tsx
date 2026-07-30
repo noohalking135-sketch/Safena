@@ -11,7 +11,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // جلب طلبات المستخدم الحالي فقط بناءً على رقم الهاتف
+  // جلب طلبات المستخدم الحالي حصرياً بناءً على رقم الهاتف المحلي (10 أرقام تبدأ بـ 09)
   useEffect(() => {
     const fetchUserOrders = async () => {
       try {
@@ -22,11 +22,13 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
           return;
         }
 
+        const phoneTrimmed = user.phone.trim();
+
         const response = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.ordersCollectionId,
           [
-            Query.equal('customer_phone', user.phone),
+            Query.equal('customer_phone', phoneTrimmed),
             Query.orderDesc('$createdAt')
           ]
         );
@@ -69,7 +71,6 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
     };
   };
 
-  // دالة ذكية لتحليل الأصناف سواء كانت نص JSON أو مصفوفة
   const parseOrderItems = (itemsData: any) => {
     if (!itemsData) return [];
     try {
@@ -136,7 +137,6 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
                   <div className="mb-3 flex flex-wrap gap-2 pt-2">
                     {items.length > 0 ? (
                       items.map((item: any, idx: number) => {
-                        // استخراج اسم الصنف حسب اللغة أو بشكل مباشر
                         const itemName = typeof item.name === 'object' 
                           ? (item.name[lang] || item.name.ar || item.name.en || "وجبة") 
                           : (item.name || "وجبة");
