@@ -1,14 +1,23 @@
 import { Client, Databases } from 'appwrite';
 
-export const APPWRITE_ENDPOINT = "https://tor.cloud.appwrite.io/v1";
-export const APPWRITE_PROJECT_ID = "6a658f7200183d84195b";
-export const APPWRITE_DATABASE_ID = "6a65915e00291cf7f54c"; // تم وضع الـ Database ID الصحيح هنا
-export const ORDERS_TABLE_ID = "orders";
-export const COMPLAINTS_TABLE_ID = "complaints";
+export const APPWRITE_CONFIG = {
+  endpoint: 'https://cloud.appwrite.io/v1',
+  projectId: '6a65915e00291cf7f54c', // معرّف المشروع الموحد والصحيح
+  databaseId: '6a65915e00291cf7f54c', // معرّف قاعدة البيانات لديك
+  ordersCollectionId: 'orders',
+  complaintsCollectionId: 'complaints',
+};
 
-export const client = new Client(); // <--- تم إضافة export هنا
+// توافقية مع الأسماء التي تستخدمها بعض المكونات
+export const APPWRITE_ENDPOINT = APPWRITE_CONFIG.endpoint;
+export const APPWRITE_PROJECT_ID = APPWRITE_CONFIG.projectId;
+export const APPWRITE_DATABASE_ID = APPWRITE_CONFIG.databaseId;
+export const ORDERS_TABLE_ID = APPWRITE_CONFIG.ordersCollectionId;
+export const COMPLAINTS_TABLE_ID = APPWRITE_CONFIG.complaintsCollectionId;
+
+export const client = new Client();
 client
-  .setEndpoint(APPWRITE_ENDPOINT)
-  .setProject(APPWRITE_PROJECT_ID);
+  .setEndpoint(APPWRITE_CONFIG.endpoint)
+  .setProject(APPWRITE_CONFIG.projectId);
 
 export const databases = new Databases(client);
