@@ -1,98 +1,60 @@
 const fetch = require('node-fetch');
 
-// تخزين آخر بضع طلبات لمنع التكرار اللحظي فقط خلال دقيقة واحدة
-let recentOrders = new Map();
-
 module.exports = async ({ req, res, log, error }) => {
-  try {
-    let payload = {};
-    if (typeof req.payload === 'string') {
-      try { payload = JSON.parse(req.payload); } catch (e) { payload = {}; }
-    } else if (typeof req.payload === 'object' && req.payload !== null) {
-      payload = req.payload;
-    }
+  if (req.headers['x-appwrite-event']) {
+    try {
+      const payload = JSON.parse(req.payload || '{}');
+      let data = payload.document || payload;
 
-    log("Incoming Payload: " + JSON.stringify(payload));
+      if (!data.customer_name && !data.customer && !data.customer_phone) {
+        const eventHeader = req.headers['x-appwrite-event'] || '';
+        const collectionId = eventHeader.includes('orders') ? 'orders' : 'complaints';
 
-    let data = payload.document || payload.current || payload.data || payload;
-    let orderId = data.$id || data.id;
+        const response = await fetch(`https://cloud.appwrite.io/v1/databases/6a65915e00291cf7f54c/collections/${collectionId}/documents?limit=1&orderType[0]=DESC`, {
+          headers: {
+            'X-Appwrite-Project': '6a658f7200183d84195b',
+            'Content-Type': 'application/json'
+          }
+        });
 
-    // تنظيف الطلبات القديمة من الذاكرة (أقدم من دقيقة)
-    const now = Date.now();
-    for (let [id, timestamp] of recentOrders.entries()) {
-      if (now - timestamp > 60000) {
-        recentOrders.delete(id);
-      }
-    }
-
-    // إذا تم إرسال نفس الطلب بالضبط خلال آخر دقيقة، نتجاهله
-    if (orderId && recentOrders.has(orderId)) {
-      log(`Ignored duplicate event for order ID: ${orderId}`);
-      return res.json({ success: true, message: "Duplicate ignored" });
-    }
-
-    // إذا لم يأتِ الـ payload مباشرة، نجلب أحدث طلب أُضيف للقاعدة
-    if (!data || Object.keys(data).length === 0 || (!data.customer_name && !data.items)) {
-      const PROJECT_ID = '6a658f7200183d84195b';
-      const DATABASE_ID = '6a65915e00291cf7f54c';
-      
-      try {
-        const response = await fetch(`https://cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/${collectionId}/documents?limit=1&orderType[0]=DESC`, {
-  headers: {
-    'X-Appwrite-Project': '6a658f7200183d84195b', // معرف مشروعك الصحيح
-    'Content-Type': 'application/json'
-  }
-});          
-        
-        const dbResult = await dbResponse.json();
-        if (dbResult.documents && dbResult.documents.length > 0) {
-          data = dbResult.documents[0];
-          orderId = data.$id;
+        const result = await response.json();
+        if (result.documents && result.documents.length > 0) {
+          data = result.documents[0];
         }
-      } catch (dbErr) {
-        error("خطأ في جلب أحدث سجل: " + dbErr.message);
       }
+
+      const customerName = data.customer_name || data.customer || data.name || "عميل جديد";
+      const customerPhone = data.customer_phone || data.phone || data.mobile || "غير محدد";
+      const location = data.location || data.address || data.homeAddress || "غير محدد";
+      const items = data.items || data.details || data.subject || "غير محدد";
+      const total = data.total ? `💰 *المجموع:* ${data.total} ل.س` : "";
+
+      const message = `🚨 *طلب أو شكوى جديدة عبر التطبيق!*\n\n` +
+                      `👤 *العميل:* ${customerName}\n` +
+                      `📞 *الهاتف:* ${customerPhone}\n` +
+                      `📍 *الموقع:* ${location}\n` +
+                      `📦 *التفاصيل:* ${items}\n` +
+                      (total ? `${total}\n` : "");
+
+      const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
+      const CHAT_ID = '1671413336';
+
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: message,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      return res.json({ success: true });
+    } catch (err) {
+      error("Error: " + err.message);
+      return res.json({ success: false, error: err.message }, 500);
     }
-
-    if (orderId) {
-      recentOrders.set(orderId, now);
-    }
-
-    const customerName = data.customer_name || data.customer || "عميل جديد";
-    const customerPhone = data.customer_phone || data.phone || "غير محدد";
-    const location = data.location || data.address || "غير محدد";
-    const items = data.items || data.details || "لا توجد تفاصيل";
-    const total = data.total !== undefined && data.total !== null ? `💰 *المجموع:* ${data.total} ل.س` : "";
-
-    const message = `🚨 *طلب أو شكوى جديدة عبر التطبيق!*\n\n` +
-                    `👤 *العميل:* ${customerName}\n` +
-                    `📞 *الهاتف:* ${customerPhone}\n` +
-                    `📍 *الموقع:* ${location}\n` +
-                    `📦 *التفاصيل:* ${items}\n` +
-                    (total ? `${total}\n` : "");
-
-    const BOT_TOKEN = '8848039805:AAEPnf84p9p0jJ7F0B6mttiW6u6ipCffq6I';
-    const CHAT_ID = '1671413336';
-
-    const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: 'Markdown'
-      })
-    });
-
-    const tgData = await tgRes.json();
-    if (!tgData.ok) {
-      error("فشل إرسال تليجرام: " + JSON.stringify(tgData));
-      return res.json({ success: false, telegram_error: tgData }, 500);
-    }
-
-    return res.json({ success: true });
-  } catch (err) {
-    error("خطأ حرج في الدالة: " + err.message);
-    return res.json({ success: false, error: err.message }, 500);
   }
+
+  return res.json({ success: true });
 };
