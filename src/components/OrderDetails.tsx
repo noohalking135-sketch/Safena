@@ -1,5 +1,4 @@
-import { MapPin, Clock, User, Phone, Package, UtensilsCrossed, CheckCircle2, Bike } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { MapPin, Phone, UtensilsCrossed, CheckCircle2, Bike } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -25,14 +24,15 @@ export function OrderDetails({ order, t }: { order: any; t: any }) {
   const isDelivered = rawStatus === "تم التوصيل" || rawStatus === "completed" || rawStatus === "delivered";
   const isOnWay = rawStatus === "في الطريق" || rawStatus === "delivering" || rawStatus === "on_way" || isDelivered;
 
+  const orderIdShort = order.id ? order.id.slice(-4) : (order.$id ? order.$id.slice(-4) : '0000');
+
   return (
     <div className="p-5" dir="rtl">
+      {/* Order header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-slate-400">رقم الطلب</p>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-            #{order.id ? order.id.slice(-4) : (order.$id ? order.$id.slice(-4) : 'جديد')}
-          </h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">#{orderIdShort}</h3>
         </div>
         <Badge className={`${config.color} border-0 px-3 py-1 font-medium`}>
           <StatusIcon className="ms-1 h-3.5 w-3.5" />
@@ -45,7 +45,7 @@ export function OrderDetails({ order, t }: { order: any; t: any }) {
         <OrderMap />
       </div>
 
-      {/* Timeline (المراحل الحقيقية بناءً على Appwrite) */}
+      {/* Timeline */}
       <div className="mt-5">
         <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-300">مراحل الطلب</h4>
         <div className="space-y-1">
@@ -80,15 +80,15 @@ export function OrderDetails({ order, t }: { order: any; t: any }) {
         <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
           <Avatar className="h-10 w-10">
             <AvatarFallback className="bg-yellow-100 text-xs font-bold text-yellow-700">
-              {order.customer ? order.customer.split(" ").map((n: string) => n[0]).join("") : "زب"}
+              {order.customerName || order.customer ? (order.customerName || order.customer).split(" ").map((n: string) => n[0]).join("") : "زب"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <p className="text-sm font-bold text-slate-900 dark:text-white">{order.customer || "العميل"}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400" dir="ltr">{order.phone}</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">{order.customerName || order.customer || "العميل"}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400" dir="ltr">{order.phone || order.customer_phone}</p>
           </div>
-          {order.phone && (
-            <a href={`tel:${order.phone}`}>
+          {(order.phone || order.customer_phone) && (
+            <a href={`tel:${order.phone || order.customer_phone}`}>
               <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-700">
                 <Phone className="h-4 w-4 text-slate-600 dark:text-slate-300" />
               </Button>
@@ -102,7 +102,7 @@ export function OrderDetails({ order, t }: { order: any; t: any }) {
         <h4 className="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300">عنوان التوصيل</h4>
         <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
-          <p className="text-sm text-slate-600 dark:text-slate-300">{order.address || order.homeAddress || "العنوان بالتفصيل"}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{order.address || order.location || "العنوان بالتفصيل"}</p>
         </div>
       </div>
 
@@ -121,7 +121,7 @@ export function OrderDetails({ order, t }: { order: any; t: any }) {
 
       {/* Action buttons */}
       <div className="mt-5 flex gap-2">
-        <a href={`https://wa.me/963959213962`} target="_blank" rel="noopener noreferrer" className="flex-1">
+        <a href="https://wa.me/963959213962" target="_blank" rel="noopener noreferrer" className="flex-1">
           <Button className="w-full rounded-xl bg-yellow-400 text-slate-900 hover:bg-yellow-500 font-bold">
             تواصل معنا بخصوص الطلب
           </Button>
