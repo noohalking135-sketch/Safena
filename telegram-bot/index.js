@@ -37,12 +37,13 @@ module.exports = async ({ req, res, log, error }) => {
       const DATABASE_ID = '6a65915e00291cf7f54c';
       
       try {
-        const dbResponse = await fetch(`https://tor.cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/orders/documents?limit=1&orderDesc(\$createdAt)=true`, {
-          headers: {
-            'X-Appwrite-Project': PROJECT_ID,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await fetch(`https://cloud.appwrite.io/v1/databases/${DATABASE_ID}/collections/${collectionId}/documents?limit=1&orderType[0]=DESC`, {
+  headers: {
+    'X-Appwrite-Project': '6a658f7200183d84195b', // معرف مشروعك الصحيح
+    'Content-Type': 'application/json'
+  }
+});          
+        
         const dbResult = await dbResponse.json();
         if (dbResult.documents && dbResult.documents.length > 0) {
           data = dbResult.documents[0];
