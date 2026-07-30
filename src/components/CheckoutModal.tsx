@@ -182,8 +182,7 @@ return (
 <div className="flex items-center justify-between">
 <div>
 <p className="text-xs text-slate-400">رقم الطلب</p>
-<h3 className="text-xl font-bold text-slate-900 dark:text-white">#{order.id || order.latex
-id?.slice(-4)}&lt;/h3&gt; &lt;/div&gt; &lt;Badge className={`
+<h3 className="text-xl font-bold text-slate-900 dark:text-white">#{order.id ? order.id.slice(-4) : 'جديد'}</h3>
 
 {config.color} border-0 px-3 py-1 font-medium`}>
 <StatusIcon className="ms-1 h-3.5 w-3.5" />
