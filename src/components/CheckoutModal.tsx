@@ -23,7 +23,7 @@ setIsSubmitting(true);
 const formattedItems = (cartItems || []).map((item: any) => {
 const nameVal = typeof item.name === 'object' ? (item.name?.ar || item.name?.en || '') : (item.name || item.title || '');
 const qty = item.qty || item.quantity || 1;
-return ${nameVal} (x${qty});
+return `${nameVal} (x${qty})`;
 }).filter(Boolean).join(' / ');
 
 try {
