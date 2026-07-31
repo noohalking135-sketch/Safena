@@ -1,4 +1,4 @@
-import { Client, Databases } from 'appwrite';
+import { Client, account, Databases } from 'appwrite';
 
 export const APPWRITE_CONFIG = {
   endpoint: 'https://tor.cloud.appwrite.io/v1',
@@ -10,6 +10,7 @@ export const APPWRITE_CONFIG = {
 
 // توافقية مع الأسماء التي تستخدمها بعض المكونات
 export const APPWRITE_ENDPOINT = APPWRITE_CONFIG.endpoint;
+export const account = new Account(client);
 export const APPWRITE_PROJECT_ID = APPWRITE_CONFIG.projectId;
 export const APPWRITE_DATABASE_ID = APPWRITE_CONFIG.databaseId;
 export const ORDERS_TABLE_ID = APPWRITE_CONFIG.ordersCollectionId;
