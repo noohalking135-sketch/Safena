@@ -13,18 +13,22 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
   const [isNew, setIsNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleConfirm = async () => {
+      const handleConfirm = async () => {
     const location = isNew ? newLocation.trim() : selectedLocation;
     if (!location) return;
 
     setIsSubmitting(true);
 
     try {
-      // جلب معرف المستخدم الحالي مباشرة لضمان عدم وصوله فارغاً
-      let currentUserId = user?.$id || user?.id;
-      if (!currentUserId) {
-        const currentUser = await account.get();
-        currentUserId = currentUser.$id;
+      // محاولة أمان جلب المعرف دون إحداث خطأ فشل إن لم يكن مسجلاً
+      let currentUserId = user?.$id || user?.id || "guest";
+      try {
+        if (!user?.$id && !user?.id) {
+          const currentUser = await account.get();
+          if (currentUser?.$id) currentUserId = currentUser.$id;
+        }
+      } catch (e) {
+        // تجاهل خطأ الجلسة واستخدام القيمة الافتراضية للضيوف لتجنب توقف الإرسال
       }
 
       const formattedItems = (cartItems || []).map((item: any) => {
@@ -40,7 +44,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         {
           customer_name: user?.name || "عميل",
           customer_phone: user?.phone || "00000000",
-          user_id: currentUserId, // سيتم إرسال معرف المستخدم الحقيقي هنا ولن يكون فارغاً أبداً
+          user_id: currentUserId,
           total: Number(cartTotal) || 0,
           items: formattedItems,
           location: location || "الموقع",
@@ -56,6 +60,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
       setIsSubmitting(false);
     }
   };
+
 
   const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim()) || isSubmitting;
 
