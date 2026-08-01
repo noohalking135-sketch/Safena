@@ -4,68 +4,72 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { databases, APPWRITE_CONFIG } from "@/lib/appwrite";
+import { databases, client, APPWRITE_CONFIG } from "@/lib/appwrite";
 import { Query } from "appwrite";
 
 export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserOrders = async () => {
-      try {
-        setLoading(true);
-        if (!user?.phone) {
-          setOrders([]);
-          setLoading(false);
-          return;
-        }
-
-        console.log("Fetching orders for phone:", user.phone);
-
-        // جلب آخر الطلبات مرتبة تنازلياً (تأكد من إنشاء فهرس $createdAt في Appwrite أو استغناء عنه مؤقتاً إذا تطلب الأمر)
-        let response;
-        try {
-          response = await databases.listDocuments(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.ordersCollectionId,
-            [
-              Query.orderDesc('$createdAt'),
-              Query.limit(50)
-            ]
-          );
-        } catch (err) {
-          // جلب بدون ترتيب إذا فشل الفهرس
-          response = await databases.listDocuments(
-            APPWRITE_CONFIG.databaseId,
-            APPWRITE_CONFIG.ordersCollectionId,
-            [Query.limit(50)]
-          );
-        }
-
-        console.log("All fetched orders from Appwrite:", response.documents);
-
-        // تنقية وتصفية الطلبات الخاصة بالمستخدم الحالي بناءً على رقم الهاتف (تجاهل المسافات والرموز لضمان المطابقة)
-        const userCleanPhone = String(user.phone).replace(/\D/g, "");
-        
-        const filteredOrders = response.documents.filter((doc: any) => {
-          const docPhone = String(doc.customer_phone || doc.phone || "").replace(/\D/g, "");
-          if (!docPhone) return false;
-          // مطابقة الأجزاء الأخيرة من الرقم لضمان النجاح حتى لو اختلف رمز الدولة
-          return docPhone.endsWith(userCleanPhone.slice(-9)) || userCleanPhone.endsWith(docPhone.slice(-9));
-        });
-
-        console.log("Filtered orders for current user:", filteredOrders);
-        setOrders(filteredOrders);
-
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      } finally {
+  const fetchUserOrders = async () => {
+    try {
+      if (!user?.phone) {
+        setOrders([]);
         setLoading(false);
+        return;
       }
-    };
 
+      let response;
+      try {
+        response = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.ordersCollectionId,
+          [
+            Query.orderDesc('$createdAt'),
+            Query.limit(50)
+          ]
+        );
+      } catch (err) {
+        response = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.ordersCollectionId,
+          [Query.limit(50)]
+        );
+      }
+
+      const userCleanPhone = String(user.phone).replace(/\D/g, "");
+      const filteredOrders = response.documents.filter((doc: any) => {
+        const docPhone = String(doc.customer_phone || doc.phone || "").replace(/\D/g, "");
+        if (!docPhone) return false;
+        return docPhone.endsWith(userCleanPhone.slice(-9)) || userCleanPhone.endsWith(docPhone.slice(-9));
+      });
+
+      setOrders(filteredOrders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserOrders();
+
+    // ربط البث المباشر (Realtime) لتحديث الطلبات والحالة فوراً عند التعديل أو الإضافة
+    const channel = `databases.${APPWRITE_CONFIG.databaseId}.collections.${APPWRITE_CONFIG.ordersCollectionId}.documents`;
+    const unsubscribe = client.subscribe(channel, (response) => {
+      if (
+        response.events.includes("databases.*.collections.*.documents.*.update") ||
+        response.events.includes("databases.*.collections.*.documents.*.create") ||
+        response.events.includes("databases.*.collections.*.documents.*.delete")
+      ) {
+        fetchUserOrders();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [user]);
 
   const getStatusInfo = (rawStatus: string) => {
@@ -95,15 +99,18 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
     };
   };
 
+  // دالة مطورة لقراءة محتويات الطلب سواء كانت مصفوفة، نص عادي، أو JSON String
   const parseOrderItems = (itemsData: any) => {
     if (!itemsData) return [];
     try {
       if (typeof itemsData === 'string') {
-        return JSON.parse(itemsData);
+        const parsed = JSON.parse(itemsData);
+        return Array.isArray(parsed) ? parsed : [{ name: itemsData, qty: 1 }];
       }
-      return Array.isArray(itemsData) ? itemsData : [];
+      return Array.isArray(itemsData) ? itemsData : [itemsData];
     } catch (e) {
-      return [];
+      // إذا كان النص عبارة عن اسم وجبة عادي وليس JSON
+      return [{ name: String(itemsData), qty: 1 }];
     }
   };
 
@@ -174,6 +181,26 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
                       <span className="text-xs text-slate-500">تفاصيل الطلب مسجلة</span>
                     )}
                   </div>
+
+                  {(() => {
+                    const st = (order.status || "").trim().toLowerCase();
+                    return (st === "onway" || st === "on_way" || st === "delivering" || st === "في الطريق");
+                  })() && (
+                    <div className="mb-3 flex items-center gap-3 rounded-xl bg-blue-50 p-3 dark:bg-blue-900/20" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-200/50 dark:bg-blue-900/40">
+                        <Bike className="h-5 w-5 text-blue-700 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">السائق</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white" dir="ltr">+963 959 213 962</p>
+                      </div>
+                      <a href="tel:+963959213962">
+                        <Button size="icon" className="rounded-full bg-blue-600 hover:bg-blue-700 text-white">
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                      </a>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400 mt-2 border-t border-slate-100 dark:border-slate-700/50 pt-3">
                     <span>{items.length > 0 ? `${items.length} أصناف` : "التفاصيل"}</span>
