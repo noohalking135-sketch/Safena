@@ -11,7 +11,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // تعريف حالة العدادات محلياً في أعلى المكون
+  // تخزين الثواني المتبقية محلياً لكل طلب لضمان عدم ضياعها عند الـ Refresh
   const [deliveredTimers, setDeliveredTimers] = useState<{ [key: string]: number }>({});
 
   const fetchUserOrders = async () => {
@@ -74,7 +74,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
     };
   }, [user]);
 
-  // مؤقت دقيقة واحدة (60 ثانية) محلياً عند تفعيل حالة "تم التوصيل"
+  // مؤقت دقيقة واحدة (60 ثانية) يعتمد على localStorage لضمان ثباته عند الـ Refresh
   useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prevOrders => {
@@ -84,24 +84,27 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
           const orderId = order.$id || order.id;
 
           if (isDelivered) {
-            setDeliveredTimers(curr => {
-              const currentVal = curr[orderId] !== undefined ? curr[orderId] : 60;
-              const nextTime = currentVal - 1;
+            const storageKey = `timer_start_${orderId}`;
+            let startTime = Number(localStorage.getItem(storageKey));
 
-              if (nextTime <= 0) {
-                databases.deleteDocument(
-                  APPWRITE_CONFIG.databaseId,
-                  APPWRITE_CONFIG.ordersCollectionId,
-                  orderId
-                ).catch(err => console.error("Failed to delete expired order:", err));
-              }
+            if (!startTime || isNaN(startTime)) {
+              startTime = Date.now();
+              localStorage.setItem(storageKey, String(startTime));
+            }
 
-              return { ...curr, [orderId]: nextTime };
-            });
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = 60 - elapsedSeconds;
 
-            // إزالة الطلب من الواجهة إذا انتهى العداد
-            // @ts-ignore
-            if (deliveredTimers[orderId] !== undefined && deliveredTimers[orderId] <= 0) {
+            setDeliveredTimers(curr => ({ ...curr, [orderId]: remaining > 0 ? remaining : 0 }));
+
+            if (remaining <= 0) {
+              localStorage.removeItem(storageKey);
+              databases.deleteDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.ordersCollectionId,
+                orderId
+              ).catch(err => console.error("Failed to delete expired order:", err));
+
               return null;
             }
           }
