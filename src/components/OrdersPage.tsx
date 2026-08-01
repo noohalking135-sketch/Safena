@@ -55,7 +55,6 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
   useEffect(() => {
     fetchUserOrders();
 
-    // ربط البث المباشر (Realtime) لتحديث الطلبات والحالة فوراً عند التعديل أو الإضافة
     const channel = `databases.${APPWRITE_CONFIG.databaseId}.collections.${APPWRITE_CONFIG.ordersCollectionId}.documents`;
     const unsubscribe = client.subscribe(channel, (response) => {
       if (
@@ -71,6 +70,40 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
       unsubscribe();
     };
   }, [user]);
+
+  // مؤقت لحساب الـ 5 دقائق (300 ثانية) بدقة بناءً على التوقيت الحقيقي للوحة أو وقت التحديث
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOrders(prevOrders => {
+        return prevOrders.map(order => {
+          const st = (order.status || "").trim().toLowerCase();
+          const isDelivered = st === "delivered" || st === "completed" || st === "تم التوصيل";
+
+          if (isDelivered) {
+            // نعتمد على وقت التحديث ($updatedAt) أو وقت الإنشاء ($createdAt) ليكون المرجع الثابت حتى عند الـ Refresh
+            const referenceTime = order.$updatedAt ? new Date(order.$updatedAt).getTime() : (order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now());
+            const elapsedSeconds = Math.floor((Date.now() - referenceTime) / 1000);
+            const remaining = 60 - elapsedSeconds; // 300 ثانية = 5 دقائق
+
+            if (remaining <= 0) {
+              const orderId = order.$id || order.id;
+              // حذف الطلب نهائياً من قاعدة بيانات Appwrite عند انتهاء العداد
+              databases.deleteDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.ordersCollectionId,
+                orderId
+              ).catch(err => console.error("Failed to delete expired order:", err));
+
+              return null; // إزالته من الواجهة
+            }
+          }
+          return order;
+        }).filter(Boolean);
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const getStatusInfo = (rawStatus: string) => {
     const status = rawStatus ? rawStatus.trim().toLowerCase() : "preparing";
@@ -99,7 +132,6 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
     };
   };
 
-  // دالة مطورة لقراءة محتويات الطلب سواء كانت مصفوفة، نص عادي، أو JSON String
   const parseOrderItems = (itemsData: any) => {
     if (!itemsData) return [];
     try {
@@ -109,7 +141,6 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
       }
       return Array.isArray(itemsData) ? itemsData : [itemsData];
     } catch (e) {
-      // إذا كان النص عبارة عن اسم وجبة عادي وليس JSON
       return [{ name: String(itemsData), qty: 1 }];
     }
   };
@@ -143,6 +174,19 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
             
             const items = parseOrderItems(order.items);
 
+            // حساب الوقت المتبقي للعرض في حالة "تم التوصيل"
+            const st = (order.status || "").trim().toLowerCase();
+            const isDelivered = st === "delivered" || st === "completed" || st === "تم التوصيل";
+            let remainingText = "";
+            if (isDelivered) {
+              const referenceTime = order.$updatedAt ? new Date(order.$updatedAt).getTime() : (order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now());
+              const elapsedSeconds = Math.floor((Date.now() - referenceTime) / 1000);
+              const remaining = Math.max(0, 300 - elapsedSeconds);
+              const minutes = Math.floor(remaining / 60);
+              const seconds = remaining % 60;
+              remainingText = ` (يختفي خلال ${minutes}:${seconds < 10 ? '0' : ''}${seconds})`;
+            }
+
             return (
               <Card 
                 key={order.$id || order.id} 
@@ -160,7 +204,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
                     </CardDescription>
                   </div>
                   <Badge className={cn("font-semibold border-0", statusInfo.color)}>
-                    {statusInfo.label}
+                    {statusInfo.label} {remainingText}
                   </Badge>
                 </CardHeader>
                 
@@ -181,26 +225,6 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
                       <span className="text-xs text-slate-500">تفاصيل الطلب مسجلة</span>
                     )}
                   </div>
-
-                  {(() => {
-                    const st = (order.status || "").trim().toLowerCase();
-                    return (st === "onway" || st === "on_way" || st === "delivering" || st === "في الطريق");
-                  })() && (
-                    <div className="mb-3 flex items-center gap-3 rounded-xl bg-blue-50 p-3 dark:bg-blue-900/20" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-200/50 dark:bg-blue-900/40">
-                        <Bike className="h-5 w-5 text-blue-700 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">السائق</p>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white" dir="ltr">+963 959 213 962</p>
-                      </div>
-                      <a href="tel:+963959213962">
-                        <Button size="icon" className="rounded-full bg-blue-600 hover:bg-blue-700 text-white">
-                          <Phone className="h-4 w-4" />
-                        </Button>
-                      </a>
-                    </div>
-                  )}
 
                   <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400 mt-2 border-t border-slate-100 dark:border-slate-700/50 pt-3">
                     <span>{items.length > 0 ? `${items.length} أصناف` : "التفاصيل"}</span>
