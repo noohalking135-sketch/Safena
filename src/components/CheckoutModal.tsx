@@ -52,14 +52,11 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         }
       );
 
-      setIsSubmitting(false);
-      onConfirm(location);
-    } catch (error: any) {
-      console.error("Appwrite order insert error:", error);
-      alert("خطأ أثناء إرسال الطلب: " + (error.message || JSON.stringify(error)));
-      setIsSubmitting(false);
-    }
-  };
+      } catch (error: any) {
+  console.error("Error details:", error);
+  alert("السبب الحقيقي: " + (error?.message || JSON.stringify(error)));
+  setIsSubmitting(false);
+}
 
 
   const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim()) || isSubmitting;
