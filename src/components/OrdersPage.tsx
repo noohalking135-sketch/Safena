@@ -11,38 +11,27 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+      useEffect(() => {
     const fetchUserOrders = async () => {
       try {
         setLoading(true);
-        if (!user?.phone && !user?.$id && !user?.id) {
+        if (!user?.phone) {
           setOrders([]);
           setLoading(false);
           return;
         }
 
-        // جلب جميع الطلبات ثم تصفيتها برمجياً أو عبر الاستعلام لضمان عدم ضياع أي طلب
+        // جلب الطلبات مطابقة لرقم هاتف المستخدم فقط
         const response = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.ordersCollectionId,
           [
+            Query.equal('customer_phone', user.phone),
             Query.orderDesc('$createdAt')
           ]
         );
 
-        // تصفية الطلبات بناءً على معرف المستخدم أو رقم الهاتف للتأكد من مطابقتها للعميل الحالي
-        const currentUserId = user?.$id || user?.id;
-        const currentUserPhone = user?.phone;
-
-        const filteredOrders = response.documents.filter((doc: any) => {
-          return (
-            (currentUserId && doc.user_id === currentUserId) ||
-            (currentUserPhone && doc.customer_phone === currentUserPhone) ||
-            doc.user_id === "guest"
-          );
-        });
-
-        setOrders(filteredOrders.length > 0 ? filteredOrders : response.documents);
+        setOrders(response.documents);
       } catch (error) {
         console.error("Error fetching orders:", error);
       } finally {
@@ -52,6 +41,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
 
     fetchUserOrders();
   }, [user]);
+
 
   const getStatusInfo = (rawStatus: string) => {
     const status = rawStatus ? rawStatus.trim().toLowerCase() : "preparing";
