@@ -65,7 +65,7 @@ export default function App() {
           $createdAt: o.$createdAt,
           items: typeof o.items === 'string' ? JSON.parse(o.items || "[]") : (o.items || []),
           location: o.location,
-          deliveredTimer: o.status === 'delivered' ? (o.deliveredTimer || 300) : null,
+          deliveredTimer: o.status === 'delivered' ? (o.deliveredTimer || 60) : null,
         }));
         setOrders(appwriteOrders);
       }
