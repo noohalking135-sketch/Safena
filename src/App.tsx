@@ -37,31 +37,36 @@ export default function App() {
 
   const t = translations[lang];
 
-      const fetchOrders = () => {
-    // إزالة Query.orderDesc مؤقتاً لاختبار ما إذا كان الفهرس هو السبب، أو جلبها بدون استعلامات معقدة
+        const fetchOrders = () => {
+    if (!user?.phone) {
+      setOrders([]);
+      return;
+    }
+
     databases.listDocuments(
       APPWRITE_DATABASE_ID,
-      ORDERS_TABLE_ID
+      ORDERS_TABLE_ID,
+      [
+        Query.equal('customer_phone', user.phone),
+        Query.orderDesc('$createdAt')
+      ]
     ).then(response => {
-      console.log("Appwrite raw response:", response); // افتح المتصفح (F12) لرصد البيانات القادمة
       if (response.documents) {
-        const appwriteOrders = response.documents.map((o: any) => {
-          return {
-            id: o.$id,
-            $id: o.$id,
-            status: o.status || "preparing",
-            rawStatus: o.status || "preparing",
-            total: o.total || 0,
-            customer: o.customer_name || o.customer || user?.name || "عميل",
-            phone: o.customer_phone || o.phone || user?.phone || "",
-            address: o.location || o.address || "",
-            date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-            $createdAt: o.$createdAt,
-            items: typeof o.items === 'string' ? [{ name: o.items, qty: 1 }] : (o.items || []),
-            location: o.location,
-            deliveredTimer: o.status === 'delivered' ? (o.deliveredTimer || 300) : null,
-          };
-        });
+        const appwriteOrders = response.documents.map((o: any) => ({
+          id: o.$id,
+          $id: o.$id,
+          status: o.status || "preparing",
+          rawStatus: o.status || "preparing",
+          total: o.total || 0,
+          customer: o.customer_name || o.customer || user?.name || "عميل",
+          phone: o.customer_phone || o.phone || user?.phone || "",
+          address: o.location || o.address || "",
+          date: o.$createdAt ? o.$createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+          $createdAt: o.$createdAt,
+          items: typeof o.items === 'string' ? JSON.parse(o.items || "[]") : (o.items || []),
+          location: o.location,
+          deliveredTimer: o.status === 'delivered' ? (o.deliveredTimer || 300) : null,
+        }));
         setOrders(appwriteOrders);
       }
     }).catch(error => {
