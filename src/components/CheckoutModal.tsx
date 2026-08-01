@@ -147,7 +147,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
             {t.confirmAndSend}
           </Button>
         </CardFooter>
-      </Card>
-    </div>
-  );
-}
+              </Card>
+      </div>
+    );
+  }
