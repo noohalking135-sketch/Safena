@@ -71,37 +71,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
     };
   }, [user]);
 
-  // مؤقت دقيقة واحدة (60 ثانية) للحذف التلقائي
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setOrders(prevOrders => {
-        return prevOrders.map(order => {
-          const st = (order.status || "").trim().toLowerCase();
-          const isDelivered = st === "delivered" || st === "completed" || st === "تم التوصيل";
-
-          if (isDelivered) {
-            const referenceTime = order.$updatedAt ? new Date(order.$updatedAt).getTime() : (order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now());
-            const elapsedSeconds = Math.floor((Date.now() - referenceTime) / 1000);
-            const remaining = 60 - elapsedSeconds; // 60 ثانية بالضبط (دقيقة واحدة)
-
-            if (remaining <= 0) {
-              const orderId = order.$id || order.id;
-              databases.deleteDocument(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.ordersCollectionId,
-                orderId
-              ).catch(err => console.error("Failed to delete expired order:", err));
-
-              return null;
-            }
-          }
-          return order;
-        }).filter(Boolean);
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
+ 
 
   const getStatusInfo = (rawStatus: string) => {
     const status = rawStatus ? rawStatus.trim().toLowerCase() : "preparing";
@@ -156,7 +126,53 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
           <Package className="h-16 w-16 text-yellow-400 dark:text-yellow-500" />
           <div>
             <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t?.emptyOrders || "لا توجد طلبات سابقة"}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t?.emptyOrdersDesc || "لم تقم بأي طلبات حتى الآن"}</p>
+            <p className="text-  // مؤقت دقيقة واحدة (60 ثانية) محلياً عند تفعيل حالة "تم التوصيل"
+  const [deliveredTimers, setDeliveredTimers] = useState<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOrders(prevOrders => {
+        const newTimers: { [key: string]: number } = {};
+        
+        const updatedOrders = prevOrders.map(order => {
+          const st = (order.status || "").trim().toLowerCase();
+          const isDelivered = st === "delivered" || st === "completed" || st === "تم التوصيل";
+          const orderId = order.$id || order.id;
+
+          if (isDelivered) {
+            // إذا لم يتم تسجيل وقت دخول الطلب في حالة "تم التوصيل" بعد، نبدأ العد من 60 ثانية
+            setDeliveredTimers(curr => {
+              if (curr[orderId] === undefined) {
+                return { ...curr, [orderId]: 60 };
+              }
+              const nextTime = curr[orderId] - 1;
+              if (nextTime <= 0) {
+                // حذف الطلب من قاعدة البيانات عند انتهاء الـ 60 ثانية
+                databases.deleteDocument(
+                  APPWRITE_CONFIG.databaseId,
+                  APPWRITE_CONFIG.ordersCollectionId,
+                  orderId
+                ).catch(err => console.error("Failed to delete expired order:", err));
+              }
+              return { ...curr, [orderId]: nextTime };
+            });
+
+            // إذا انتهى العداد محلياً، نزيل الطلب من الواجهة
+            // @ts-ignore
+            if (deliveredTimers[orderId] <= 0) {
+              return null;
+            }
+          }
+          return order;
+        }).filter(Boolean);
+
+        return updatedOrders;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+sm text-slate-500 dark:text-slate-400">{t?.emptyOrdersDesc || "لم تقم بأي طلبات حتى الآن"}</p>
           </div>
           <Button onClick={() => setPage("home")} className="rounded-full bg-yellow-400 text-slate-900 hover:bg-yellow-500 font-bold">
             {t?.startOrder || "ابدأ الطلب الان"}
