@@ -10,8 +10,6 @@ import { Query } from "appwrite";
 export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // تخزين الثواني المتبقية محلياً لكل طلب لضمان عدم ضياعها عند الـ Refresh
   const [deliveredTimers, setDeliveredTimers] = useState<{ [key: string]: number }>({});
 
   const fetchUserOrders = async () => {
@@ -42,6 +40,12 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
 
       const userCleanPhone = String(user.phone).replace(/\D/g, "");
       const filteredOrders = response.documents.filter((doc: any) => {
+        const orderId = doc.$id || doc.id;
+        
+        // إذا كان الطلب قد انتهى وقام المستخدم بحذفه سابقاً، لا نقوم بعرضه نهائياً حتى لو بقي في قاعدة البيانات
+        const isExpiredLocally = localStorage.getItem(`expired_${orderId}`) === "true";
+        if (isExpiredLocally) return false;
+
         const docPhone = String(doc.customer_phone || doc.phone || "").replace(/\D/g, "");
         if (!docPhone) return false;
         return docPhone.endsWith(userCleanPhone.slice(-9)) || userCleanPhone.endsWith(docPhone.slice(-9));
@@ -74,14 +78,20 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
     };
   }, [user]);
 
-  // مؤقت دقيقة واحدة (60 ثانية) يعتمد على localStorage لضمان ثباته عند الـ Refresh
+  // مؤقت دقيقة واحدة (60 ثانية) مع منع ظهوره بعد انتهائه نهائياً
   useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prevOrders => {
         return prevOrders.map(order => {
+          const orderId = order.$id || order.id;
+          
+          // إذا كان الطلب منتهي مسبقاً، نزيله مباشرة
+          if (localStorage.getItem(`expired_${orderId}`) === "true") {
+            return null;
+          }
+
           const st = (order.status || "").trim().toLowerCase();
           const isDelivered = st === "delivered" || st === "completed" || st === "تم التوصيل";
-          const orderId = order.$id || order.id;
 
           if (isDelivered) {
             const storageKey = `timer_start_${orderId}`;
@@ -98,14 +108,18 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
             setDeliveredTimers(curr => ({ ...curr, [orderId]: remaining > 0 ? remaining : 0 }));
 
             if (remaining <= 0) {
+              // تسجيل أن هذا الطلب انتهى نهائياً في الذاكرة لكي لا يعود أبداً عند الـ Refresh
+              localStorage.setItem(`expired_${orderId}`, "true");
               localStorage.removeItem(storageKey);
+
+              // محاولة حذفه من قاعدة البيانات في الخلفية
               databases.deleteDocument(
                 APPWRITE_CONFIG.databaseId,
                 APPWRITE_CONFIG.ordersCollectionId,
                 orderId
-              ).catch(err => console.error("Failed to delete expired order:", err));
+              ).catch(err => console.error("Failed to delete expired order from server:", err));
 
-              return null;
+              return null; // إزالة الطلب من الواجهة فوراً
             }
           }
           return order;
