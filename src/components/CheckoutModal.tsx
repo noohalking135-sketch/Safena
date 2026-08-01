@@ -13,14 +13,13 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
   const [isNew, setIsNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-      const handleConfirm = async () => {
+  const handleConfirm = async () => {
     const location = isNew ? newLocation.trim() : selectedLocation;
     if (!location) return;
 
     setIsSubmitting(true);
 
     try {
-      // محاولة أمان جلب المعرف دون إحداث خطأ فشل إن لم يكن مسجلاً
       let currentUserId = user?.$id || user?.id || "guest";
       try {
         if (!user?.$id && !user?.id) {
@@ -28,7 +27,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
           if (currentUser?.$id) currentUserId = currentUser.$id;
         }
       } catch (e) {
-        // تجاهل خطأ الجلسة واستخدام القيمة الافتراضية للضيوف لتجنب توقف الإرسال
+        // تجاهل خطأ الجلسة
       }
 
       const formattedItems = (cartItems || []).map((item: any) => {
@@ -52,12 +51,14 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         }
       );
 
-      } catch (error: any) {
-  console.error("Error details:", error);
-  alert("السبب الحقيقي: " + (error?.message || JSON.stringify(error)));
-  setIsSubmitting(false);
-}
-
+      setIsSubmitting(false);
+      onConfirm(location);
+    } catch (error: any) {
+      console.error("Error details:", error);
+      alert("السبب الحقيقي: " + (error?.message || JSON.stringify(error)));
+      setIsSubmitting(false);
+    }
+  };
 
   const isDisabled = (!isNew && !selectedLocation) || (isNew && !newLocation.trim()) || isSubmitting;
 
@@ -147,7 +148,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
             {t.confirmAndSend}
           </Button>
         </CardFooter>
-              </Card>
-      </div>
-    );
-  }
+      </Card>
+    </div>
+  );
+}
