@@ -112,8 +112,7 @@ export default function App() {
     if (addresses.length > 0) localStorage.setItem("noah_addresses", JSON.stringify(addresses));
   }, [addresses]);
 
-
-            useEffect(() => {
+              useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prev => {
         return prev.map(order => {
@@ -122,15 +121,23 @@ export default function App() {
           if (st === "delivered" || st === "completed" || st === "تم التوصيل") {
             const orderKey = order.$id || order.id;
             
-            // نعتمد على وقت التحديث أو وقت الإنشاء كمرجع ثابت للوقت
-            const referenceTime = order.$updatedAt ? new Date(order.$updatedAt).getTime() : (order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now());
-            const elapsedSeconds = Math.floor((Date.now() - referenceTime) / 1000);
-            
-            // ضبط العداد ليصبح 60 ثانية (دقيقة واحدة) بدلاً من 300
+            // استخدام localStorage لضمان ثبات الوقت عند عمل Refresh ولن يتغير للبداية أبداً
+            const storageKey = `timer_start_${orderKey}`;
+            let startTime = Number(localStorage.getItem(storageKey));
+
+            if (!startTime || isNaN(startTime)) {
+              startTime = Date.now();
+              localStorage.setItem(storageKey, String(startTime));
+            }
+
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
             const remaining = 60 - elapsedSeconds;
 
             if (remaining <= 0) {
-              // حذف الطلب نهائياً من قاعدة بيانات Appwrite فور انتهاء الـ 60 ثانية
+              // مسح المفتاح من الذاكرة المحلية عند انتهاء الطلب
+              localStorage.removeItem(storageKey);
+
+              // حذف الطلب نهائياً من قاعدة بيانات Appwrite
               databases.deleteDocument(
                 APPWRITE_DATABASE_ID,
                 ORDERS_TABLE_ID,
