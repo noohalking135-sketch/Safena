@@ -247,7 +247,7 @@ export default function App() {
             />
           </div>
           <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24" onScroll={handleScroll}>
-            <OrdersPage t={t} lang={lang} orders={orders} setPage={setPage} />
+            <OrdersPage t={t} lang={lang} user={user} orders={orders} setPage={setPage} />
           </div>
           <div className="h-full w-full flex-shrink-0 overflow-y-auto pb-24" onScroll={handleScroll}>
             <ComplaintsPage t={t} lang={lang} user={user} />
