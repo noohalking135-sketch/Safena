@@ -43,7 +43,7 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         {
           customer_name: user?.name || "عميل",
           customer_phone: user?.phone || "00000000",
-          user_id: currentUserId,
+          user_id: user?.phone || user?.$id || "guest",
           total: Number(cartTotal) || 0,
           items: formattedItems,
           location: location || "الموقع",
