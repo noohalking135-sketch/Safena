@@ -113,7 +113,7 @@ export default function App() {
   }, [addresses]);
 
 
-          useEffect(() => {
+            useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prev => {
         return prev.map(order => {
@@ -122,19 +122,15 @@ export default function App() {
           if (st === "delivered" || st === "completed" || st === "تم التوصيل") {
             const orderKey = order.$id || order.id;
             
-            // نستخدم وقت إنشاء الطلب أو وقت التحديث القادم من Appwrite مباشرة
-            // إذا لم يتوفر وقت محدد، نحسب على أساس الـ $createdAt
-            const createdAtTime = order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now();
-            const elapsedSeconds = Math.floor((Date.now() - createdAtTime) / 1000);
+            // نعتمد على وقت التحديث أو وقت الإنشاء كمرجع ثابت للوقت
+            const referenceTime = order.$updatedAt ? new Date(order.$updatedAt).getTime() : (order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now());
+            const elapsedSeconds = Math.floor((Date.now() - referenceTime) / 1000);
             
-            // نفترض أن الـ 5 دقائق (300 ثانية) تبدأ من وقت إنشاء الطلب أو تسليمه 
-            // (يمكنك تعديل المدة أو ربطه بحقل وقت التوصيل إذا كان متوفراً لديك في قاعدة البيانات)
-            const remaining = 300 - elapsedSeconds;
+            // ضبط العداد ليصبح 60 ثانية (دقيقة واحدة) بدلاً من 300
+            const remaining = 60 - elapsedSeconds;
 
             if (remaining <= 0) {
-              const orderKey = order.$id || order.id;
-              
-              // حذف الطلب نهائياً من قاعدة بيانات Appwrite فوراً لمنع عودته عند الـ Refresh
+              // حذف الطلب نهائياً من قاعدة بيانات Appwrite فور انتهاء الـ 60 ثانية
               databases.deleteDocument(
                 APPWRITE_DATABASE_ID,
                 ORDERS_TABLE_ID,
@@ -145,8 +141,7 @@ export default function App() {
                 console.error("Failed to delete order from Appwrite:", err);
               });
 
-              // إزالته تماماً من الواجهة
-              return null;
+              return null; // إزالة الطلب من الواجهة
             }
 
             return { ...order, deliveredTimer: remaining };
@@ -158,6 +153,7 @@ export default function App() {
 
     return () => clearInterval(timer);
   }, []);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const st = e.currentTarget.scrollTop;
     if (st > lastScrollTop.current && st > 50) {
