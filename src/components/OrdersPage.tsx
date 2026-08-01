@@ -71,7 +71,7 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
     };
   }, [user]);
 
-  // مؤقت لحساب الـ 5 دقائق (300 ثانية) بدقة بناءً على التوقيت الحقيقي للوحة أو وقت التحديث
+  // مؤقت دقيقة واحدة (60 ثانية) للحذف التلقائي
   useEffect(() => {
     const timer = setInterval(() => {
       setOrders(prevOrders => {
@@ -80,21 +80,19 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
           const isDelivered = st === "delivered" || st === "completed" || st === "تم التوصيل";
 
           if (isDelivered) {
-            // نعتمد على وقت التحديث ($updatedAt) أو وقت الإنشاء ($createdAt) ليكون المرجع الثابت حتى عند الـ Refresh
             const referenceTime = order.$updatedAt ? new Date(order.$updatedAt).getTime() : (order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now());
             const elapsedSeconds = Math.floor((Date.now() - referenceTime) / 1000);
-            const remaining = 60 - elapsedSeconds; // 300 ثانية = 5 دقائق
+            const remaining = 60 - elapsedSeconds; // 60 ثانية بالضبط (دقيقة واحدة)
 
             if (remaining <= 0) {
               const orderId = order.$id || order.id;
-              // حذف الطلب نهائياً من قاعدة بيانات Appwrite عند انتهاء العداد
               databases.deleteDocument(
                 APPWRITE_CONFIG.databaseId,
                 APPWRITE_CONFIG.ordersCollectionId,
                 orderId
               ).catch(err => console.error("Failed to delete expired order:", err));
 
-              return null; // إزالته من الواجهة
+              return null;
             }
           }
           return order;
@@ -174,14 +172,13 @@ export function OrdersPage({ t, lang, user, setPage, onSelectOrder }: any) {
             
             const items = parseOrderItems(order.items);
 
-            // حساب الوقت المتبقي للعرض في حالة "تم التوصيل"
             const st = (order.status || "").trim().toLowerCase();
             const isDelivered = st === "delivered" || st === "completed" || st === "تم التوصيل";
             let remainingText = "";
             if (isDelivered) {
               const referenceTime = order.$updatedAt ? new Date(order.$updatedAt).getTime() : (order.$createdAt ? new Date(order.$createdAt).getTime() : Date.now());
               const elapsedSeconds = Math.floor((Date.now() - referenceTime) / 1000);
-              const remaining = Math.max(0, 300 - elapsedSeconds);
+              const remaining = Math.max(0, 60 - elapsedSeconds); // تم التعديل هنا لتبدأ من 60 ثانية بدلاً من 300
               const minutes = Math.floor(remaining / 60);
               const seconds = remaining % 60;
               remainingText = ` (يختفي خلال ${minutes}:${seconds < 10 ? '0' : ''}${seconds})`;
