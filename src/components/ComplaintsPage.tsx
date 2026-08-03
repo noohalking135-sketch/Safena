@@ -18,7 +18,6 @@ export function ComplaintsPage({ t, user }: any) {
     setSubmitting(true);
 
     try {
-      // استخدام مكتبة Appwrite الرسمية لإنشاء المستند بطريقة صحيحة
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
         COMPLAINTS_TABLE_ID,
@@ -32,7 +31,7 @@ export function ComplaintsPage({ t, user }: any) {
         }
       );
 
-      alert("تم إرسال الشكوى بنجاح!");
+      // تم حذف الـ alert نهائياً لكي لا تظهر نافذة المتصفح المزعجة
       setSubmitted(true);
       setSubject("");
       setDetails("");
