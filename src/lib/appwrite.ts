@@ -21,4 +21,4 @@ export const APPWRITE_PROJECT_ID = APPWRITE_CONFIG.projectId;
 export const APPWRITE_DATABASE_ID = APPWRITE_CONFIG.databaseId;
 export const ORDERS_TABLE_ID = APPWRITE_CONFIG.ordersCollectionId;
 export const COMPLAINTS_TABLE_ID = APPWRITE_CONFIG.complaintsCollectionId;
-export const VISITS_TABLE_ID = APPWRITE_CONFIG.visitsCollectionId; // <--- تصدير ثابت جدول الزوار
+export const VISITS_TABLE_ID = 6a65915e00291cf7f54c
