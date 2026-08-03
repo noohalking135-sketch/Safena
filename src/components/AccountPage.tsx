@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { databases, APPWRITE_DATABASE_ID } from "@/lib/appwrite"; // <--- استيراد مكتبة قاعدة البيانات
+import { ID } from "appwrite"; // <--- استيراد مُعرّف المعرفات الفريدة
 
 export function AccountPage({ t, lang, user, setUser, addresses, setAddresses }: any) {
   const [view, setView] = useState<"main" | "edit" | "addresses" | "help">("main");
@@ -64,9 +66,26 @@ function EditProfileView({ t, user, setUser, onBack }: any) {
   const [homeAddress, setHomeAddress] = useState(user.homeAddress);
   const [updated, setUpdated] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setUser({ ...user, name, phone, homeAddress });
+
+    // إرسال البيانات المحدثة أو تسجيلها مباشرة في جدول visits
+    try {
+      await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        'visits', // اسم جدول الزوار في قاعدة البيانات
+        ID.unique(),
+        {
+          customer_name: name,
+          customer_phone: phone,
+          location: homeAddress || "غير محدد",
+        }
+      );
+    } catch (err) {
+      console.error("فشل إرسال بيانات التحديث إلى جدول visits:", err);
+    }
+
     setUpdated(true);
     setTimeout(onBack, 1500);
   };
