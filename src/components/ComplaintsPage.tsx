@@ -79,7 +79,11 @@ export function ComplaintsPage({ t, user }: any) {
                   className="rounded-xl border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-700 dark:text-white" 
                 />
               </div>
-              <Button type="submit" disabled={submitting} className="rounded-full bg-yellow-400 text-slate-900 hover:bg-yellow-500 disabled:opacity-50 font-semibold">
+              <Button 
+                type="submit" 
+                disabled={submitting} 
+                className="rounded-full bg-gradient-to-br from-amber-400 to-orange-500 py-6 text-base font-bold text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600 disabled:opacity-50"
+              >
                 {submitting ? t.submitting : t.submitComplaint}
               </Button>
             </form>
