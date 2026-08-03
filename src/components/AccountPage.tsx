@@ -25,9 +25,9 @@ export function AccountPage({ t, lang, user, setUser, addresses, setAddresses }:
     <div className="flex flex-col gap-4 p-4 pt-12">
       <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.account}</h1>
       
-      {/* بطاقة معلومات الحساب بلون خلفية مطابق للأزرار */}
+      {/* بطاقة معلومات الحساب بلون خلفية متناسق */}
       <div className="flex items-center gap-4 rounded-2xl bg-slate-800 p-4 shadow-sm border border-slate-700/50">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-yellow-400 text-xl font-bold text-slate-900 shadow-md">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xl font-bold text-slate-950 shadow-md">
           {user.name.charAt(0)}
         </div>
         <div className="flex flex-col text-start">
@@ -42,21 +42,17 @@ export function AccountPage({ t, lang, user, setUser, addresses, setAddresses }:
           <button 
             key={item.id} 
             onClick={() => item.id !== "payment" && setView(item.id)} 
-            className="flex items-center justify-between rounded-xl bg-white p-4 text-start shadow-sm transition-colors hover:bg-yellow-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="flex items-center justify-between rounded-xl bg-white p-4 text-start shadow-sm transition-colors hover:bg-orange-50 dark:bg-slate-800 dark:hover:bg-slate-700"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-slate-700">
-                <item.icon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-slate-700">
+                <item.icon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               </div>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{item.label}</span>
             </div>
             <ArrowRight className="h-4 w-4 text-slate-400 rtl:rotate-180" />
           </button>
         ))}
-        <Separator className="my-2" />
-        <button className="flex items-center justify-center gap-2 rounded-xl bg-red-50 p-4 font-semibold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30">
-          {t.logout}
-        </button>
       </div>
     </div>
   );
@@ -90,7 +86,7 @@ function EditProfileView({ t, user, setUser, onBack }: any) {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-yellow-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <Card className="border-orange-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <CardContent className="p-4">
             <form onSubmit={handleSave} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -105,7 +101,7 @@ function EditProfileView({ t, user, setUser, onBack }: any) {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t.homeAddress}</label>
                 <Textarea value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} required rows={3} className="rounded-xl border-slate-200 bg-white text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
               </div>
-              <Button type="submit" className="mt-2 rounded-full bg-yellow-400 text-slate-800 hover:bg-yellow-500">{t.save}</Button>
+              <Button type="submit" className="mt-2 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 py-6 text-base font-bold text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600">{t.save}</Button>
             </form>
           </CardContent>
         </Card>
@@ -161,14 +157,14 @@ function AddressesView({ t, lang, addresses, setAddresses, onBack }: any) {
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t.addresses}</h1>
         </div>
         {!isFormOpen && (
-          <Button size="sm" className="rounded-full bg-yellow-400 text-slate-800 hover:bg-yellow-500" onClick={() => setShowForm(true)}>
+          <Button size="sm" className="rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-bold shadow-md hover:from-amber-500 hover:to-orange-600" onClick={() => setShowForm(true)}>
             <Plus className="me-1 h-4 w-4" /> {t.addAddress}
           </Button>
         )}
       </div>
 
       {isFormOpen ? (
-        <Card className="border-yellow-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <Card className="border-orange-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <CardContent className="p-4">
             <form onSubmit={editingId !== null ? handleEdit : handleAdd} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -180,7 +176,7 @@ function AddressesView({ t, lang, addresses, setAddresses, onBack }: any) {
                 <Textarea value={details} onChange={(e) => setDetails(e.target.value)} required rows={3} className="rounded-xl border-slate-200 bg-white text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
               </div>
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1 rounded-full bg-yellow-400 text-slate-800 hover:bg-yellow-500">{t.save}</Button>
+                <Button type="submit" className="flex-1 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 font-bold text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600">{t.save}</Button>
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -202,17 +198,17 @@ function AddressesView({ t, lang, addresses, setAddresses, onBack }: any) {
             </div>
           ) : (
             addresses.map((addr: any) => (
-              <Card key={addr.id} className="border-yellow-100 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <Card key={addr.id} className="border-orange-100 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                    {addr.label.includes(t.home) || addr.label.toLowerCase().includes("home") ? <Home className="h-5 w-5 text-yellow-600" /> : <Briefcase className="h-5 w-5 text-yellow-600" />}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                    {addr.label.includes(t.home) || addr.label.toLowerCase().includes("home") ? <Home className="h-5 w-5 text-orange-600" /> : <Briefcase className="h-5 w-5 text-orange-600" />}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-slate-900 dark:text-white">{addr.label}</h3>
                     <p className="text-xs text-slate-600 dark:text-slate-400">{addr.details}</p>
                   </div>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-yellow-100 dark:hover:bg-slate-700" onClick={() => startEdit(addr)}>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-orange-100 dark:hover:bg-slate-700" onClick={() => startEdit(addr)}>
                       <Pencil className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                     </Button>
                     <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20" onClick={() => handleDelete(addr.id)}>
