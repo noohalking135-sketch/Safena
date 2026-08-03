@@ -66,10 +66,11 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
     <div className="absolute inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm">
       <Card className="flex max-h-[85vh] w-full flex-col rounded-t-3xl border-yellow-200 p-0 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
         <CardHeader className="flex flex-row items-center justify-between p-4">
+          {/* زر "Send Order" العلوي: تم تغيير الخلفية لتدرج برتقالي */}
           <Button
             onClick={handleConfirm}
             disabled={isDisabled}
-            className="rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition-transform hover:scale-105 hover:bg-yellow-500 disabled:opacity-50 disabled:hover:scale-100"
+            className="rounded-full bg-gradient-to-br from-amber-400 to-orange-500 px-4 py-2 text-sm font-bold text-slate-950 shadow-sm transition-transform hover:scale-105 hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 disabled:hover:scale-100"
           >
             <Send className="mx-1 h-4 w-4" />
             {t.sendOrder}
@@ -81,15 +82,16 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         </CardHeader>
 
         <CardContent className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
+          {/* شريط التبديل بين العناوين: تم تغيير الخلفية المختارة لبرتقالي */}
           <div className="flex gap-2 rounded-full bg-yellow-50 p-1 dark:bg-slate-700">
             <button
-              className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", !isNew ? "bg-yellow-400 text-slate-800" : "text-slate-500")}
+              className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", !isNew ? "bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950" : "text-slate-500")}
               onClick={() => setIsNew(false)}
             >
               {t.savedLocations}
             </button>
             <button
-              className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", isNew ? "bg-yellow-400 text-slate-800" : "text-slate-500")}
+              className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", isNew ? "bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950" : "text-slate-500")}
               onClick={() => setIsNew(true)}
             >
               {t.newLocation}
@@ -107,7 +109,8 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
                     onClick={() => setSelectedLocation(addr.details)}
                     className={cn(
                       "flex items-center gap-3 rounded-xl border-2 p-3 text-start transition-all",
-                      selectedLocation === addr.details ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "border-transparent bg-white dark:bg-slate-700"
+                      // الحدود عند الاختيار أصبحت برتقالية
+                      selectedLocation === addr.details ? "border-orange-500 bg-orange-50/50 dark:bg-yellow-900/20" : "border-transparent bg-white dark:bg-slate-700"
                     )}
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-slate-600">
@@ -117,7 +120,8 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
                       <h3 className="font-bold text-slate-800 dark:text-white">{addr.label}</h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{addr.details}</p>
                     </div>
-                    {selectedLocation === addr.details && <CheckCircle2 className="ms-auto h-5 w-5 text-yellow-500" />}
+                    {/* الأيقونة عند الاختيار أصبحت برتقالية */}
+                    {selectedLocation === addr.details && <CheckCircle2 className="ms-auto h-5 w-5 text-orange-500" />}
                   </button>
                 ))
               )}
@@ -131,7 +135,8 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
                 rows={4}
                 className="rounded-xl dark:border-slate-600 dark:bg-slate-700"
               />
-              <Button variant="outline" className="flex items-center justify-center gap-2 rounded-xl border-yellow-200 text-yellow-600">
+              {/* زر تحديد الخريطة: تم تغيير اللون النصي والحدود لبرتقالي */}
+              <Button variant="outline" className="flex items-center justify-center gap-2 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-600">
                 <Navigation className="h-4 w-4" /> تحديد على الخريطة
               </Button>
             </div>
@@ -139,10 +144,11 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         </CardContent>
 
         <CardFooter className="sticky bottom-0 z-[999] border-t border-yellow-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+          {/* زر "Confirm and Send" السفلي: تم تغيير الخلفية لتدرج برتقالي */}
           <Button
             onClick={handleConfirm}
             disabled={isDisabled}
-            className="w-full rounded-full bg-yellow-400 py-6 text-base font-bold text-slate-800 shadow-md transition-transform hover:scale-[1.02] hover:bg-yellow-500 disabled:opacity-50 disabled:hover:scale-100"
+            className="w-full rounded-full bg-gradient-to-br from-amber-400 to-orange-500 py-6 text-base font-bold text-slate-950 shadow-md transition-transform hover:scale-[1.02] hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 disabled:hover:scale-100"
           >
             <Send className="mx-2 h-5 w-5" />
             {t.confirmAndSend}
