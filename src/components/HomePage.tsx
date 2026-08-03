@@ -34,7 +34,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
   const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
   return (
-    <div className="flex flex-col gap-6 p-4 pt-6 pb-24">
+    <div className="flex flex-col gap-6 p-4 pt-6 pb-32">
       {/* تثبيت الهيدر باتجاه RTL لضمان بقاء الشعار يميناً والوصف يساراً بغض النظر عن لغة التطبيق */}
       <header className="flex items-center justify-between pt-4" dir="rtl">
         <img 
@@ -86,31 +86,31 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                   <div className="mt-2 flex items-center justify-between">
                     <span className="font-bold text-amber-500 text-sm">{product.price} {t.currency}</span>
                     {cart[product.id] ? (
-                      <div className="flex items-center justify-center gap-1.5 w-full mt-1">
+                      <div className="flex items-center justify-center gap-1.5 w-full mt-2">
                         <Button 
                           size="icon" 
                           variant="outline" 
-                          className="h-8 w-8 rounded-xl border-red-500/30 bg-gradient-to-br from-red-500 to-rose-600 p-0 text-white shadow-md hover:from-red-600 hover:to-rose-700" 
+                          className="h-8 w-8 rounded-xl border-red-500/30 bg-gradient-to-br from-red-500 to-rose-600 p-0 text-white shadow-md hover:from-red-600 hover:to-rose-700 flex items-center justify-center" 
                           onClick={() => removeFromCart(product.id)}
                         >
-                          <Minus className="h-3.5 w-3.5" />
+                          <Minus className="h-4 w-4" />
                         </Button>
                         <span className="w-6 text-center text-sm font-bold text-slate-800 dark:text-white">{cart[product.id]}</span>
                         <Button 
                           size="icon" 
-                          className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-0 text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600 font-bold" 
+                          className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-0 text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600 font-bold flex items-center justify-center" 
                           onClick={(e) => {
                             addToCart(product.id);
                             onAddToCart(product, e.currentTarget.getBoundingClientRect());
                           }}
                         >
-                          <Plus className="h-3.5 w-3.5" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
                       <Button 
                         size="icon" 
-                        className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-0 text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600 font-bold" 
+                        className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-0 text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600 font-bold flex items-center justify-center" 
                         onClick={(e) => {
                           addToCart(product.id);
                           onAddToCart(product, e.currentTarget.getBoundingClientRect());
@@ -128,20 +128,22 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
       </div>
 
       {cartCount > 0 && (
-        <Card className="fixed bottom-16 left-4 right-4 z-40 border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-xl">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-xs text-slate-400">{cartCount} {t.items}</p>
-              <p className="text-base font-bold text-amber-400 font-mono">{cartTotal} {t.currency}</p>
-            </div>
-            <Button 
-              onClick={onCheckout} 
-              className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-bold shadow-md hover:from-amber-500 hover:to-orange-600 px-6"
-            >
-              {t.checkout} 
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="fixed bottom-20 left-4 right-4 z-50">
+          <Card className="border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl rounded-2xl">
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <p className="text-xs text-slate-400 font-medium">{cartCount} {t.items}</p>
+                <p className="text-lg font-bold text-amber-400 font-mono">{cartTotal} {t.currency}</p>
+              </div>
+              <Button 
+                onClick={onCheckout} 
+                className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-bold shadow-lg hover:from-amber-500 hover:to-orange-600 px-6 py-2.5 text-sm"
+              >
+                {t.checkout} 
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {showCustomForm && (
