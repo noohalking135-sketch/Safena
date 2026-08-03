@@ -127,7 +127,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
       </div>
 
       {cartCount > 0 && (
-        <Card className="fixed bottom-20 left-4 right-4 z-40 border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-xl">
+        <Card className="fixed bottom-25 left-4 right-4 z-40 border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-xl">
           <CardContent className="flex items-center justify-between p-4">
             <div>
               <p className="text-xs text-slate-400">{cartCount} {t.items}</p>
