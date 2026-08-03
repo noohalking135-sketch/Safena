@@ -36,20 +36,40 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         return `${nameVal} (x${qty})`;
       }).filter(Boolean).join(' / ');
 
+      const customerName = user?.name || user?.fullName || "عميل";
+      const customerPhone = user?.phone || user?.phoneNumber || "00000000";
+
+      // 1. إرسال الطلب إلى جدول الطلبات (orders)
       await databases.createDocument(
         APPWRITE_DATABASE_ID,
         ORDERS_TABLE_ID,
         ID.unique(),
         {
-          customer_name: user?.name || "عميل",
-          customer_phone: user?.phone || "00000000",
-          user_id: user?.phone || user?.$id || "guest",
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          user_id: currentUserId,
           total: Number(cartTotal) || 0,
           items: formattedItems,
           location: location || "الموقع",
           status: "preparing"
         }
       );
+
+      // 2. إرسال وتخزين بيانات الزائر فوراً إلى جدول الزوار (visits)
+      try {
+        await databases.createDocument(
+          APPWRITE_DATABASE_ID,
+          'visits', // معرف جدول الزوار
+          ID.unique(),
+          {
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            location: location || "الموقع",
+          }
+        );
+      } catch (visitErr) {
+        console.error("فشل تسجيل الزائر في جدول visits:", visitErr);
+      }
 
       setIsSubmitting(false);
       onConfirm(location);
@@ -66,7 +86,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
     <div className="absolute inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm">
       <Card className="flex max-h-[85vh] w-full flex-col rounded-t-3xl border-yellow-200 p-0 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
         <CardHeader className="flex flex-row items-center justify-between p-4">
-          {/* زر "Send Order" العلوي: تم تغيير الخلفية لتدرج برتقالي */}
           <Button
             onClick={handleConfirm}
             disabled={isDisabled}
@@ -82,7 +101,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         </CardHeader>
 
         <CardContent className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
-          {/* شريط التبديل بين العناوين: تم تغيير الخلفية المختارة لبرتقالي */}
           <div className="flex gap-2 rounded-full bg-yellow-50 p-1 dark:bg-slate-700">
             <button
               className={cn("flex-1 rounded-full py-2 text-sm font-semibold transition-all", !isNew ? "bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950" : "text-slate-500")}
@@ -109,7 +127,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
                     onClick={() => setSelectedLocation(addr.details)}
                     className={cn(
                       "flex items-center gap-3 rounded-xl border-2 p-3 text-start transition-all",
-                      // الحدود عند الاختيار أصبحت برتقالية
                       selectedLocation === addr.details ? "border-orange-500 bg-orange-50/50 dark:bg-yellow-900/20" : "border-transparent bg-white dark:bg-slate-700"
                     )}
                   >
@@ -120,7 +137,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
                       <h3 className="font-bold text-slate-800 dark:text-white">{addr.label}</h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{addr.details}</p>
                     </div>
-                    {/* الأيقونة عند الاختيار أصبحت برتقالية */}
                     {selectedLocation === addr.details && <CheckCircle2 className="ms-auto h-5 w-5 text-orange-500" />}
                   </button>
                 ))
@@ -135,7 +151,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
                 rows={4}
                 className="rounded-xl dark:border-slate-600 dark:bg-slate-700"
               />
-              {/* زر تحديد الخريطة: تم تغيير اللون النصي والحدود لبرتقالي */}
               <Button variant="outline" className="flex items-center justify-center gap-2 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-600">
                 <Navigation className="h-4 w-4" /> تحديد على الخريطة
               </Button>
@@ -144,7 +159,6 @@ export function CheckoutModal({ t, lang, user, addresses, onClose, onConfirm, ca
         </CardContent>
 
         <CardFooter className="sticky bottom-0 z-[999] border-t border-yellow-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-          {/* زر "Confirm and Send" السفلي: تم تغيير الخلفية لتدرج برتقالي */}
           <Button
             onClick={handleConfirm}
             disabled={isDisabled}
