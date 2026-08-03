@@ -33,6 +33,10 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
 
   const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
+  // جلب اسم التصنيف النشط حالياً لعرضه في العنوان
+  const currentCategoryObj = mockCategories.find(c => c.id === activeCategory);
+  const sectionTitle = currentCategoryObj ? t[currentCategoryObj.labelKey] : t.popular;
+
   // ترتيب التصنيفات بحيث يتم جلب تصنيف الطلب اليدوي "custom" ليكون في البداية
   const sortedCategories = [...mockCategories].sort((a, b) => {
     if (a.id === "custom") return -1;
@@ -81,7 +85,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{activeCategory ? t.categories : t.popular}</h2>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{sectionTitle}</h2>
         <div className="grid grid-cols-2 gap-4">
           {filteredProducts.map((product) => (
             <Card key={product.id} className="overflow-hidden border-none bg-white shadow-md dark:bg-slate-800">
