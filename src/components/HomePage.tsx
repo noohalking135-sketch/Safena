@@ -34,7 +34,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
   const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
   return (
-    <div className="flex flex-col gap-6 p-4 pt-6">
+    <div className="flex flex-col gap-6 p-4 pt-6 pb-24">
       {/* تثبيت الهيدر باتجاه RTL لضمان بقاء الشعار يميناً والوصف يساراً بغض النظر عن لغة التطبيق */}
       <header className="flex items-center justify-between pt-4" dir="rtl">
         <img 
@@ -46,7 +46,6 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
           <p className="text-sm text-slate-500 dark:text-slate-400">{t.tagline}</p>
         </div>
       </header>
-
 
       <div className="flex flex-col gap-3">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.categories}</h2>
@@ -63,7 +62,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
               }}
               className={cn(
                 "flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-2xl shadow-sm transition-all",
-                activeCategory === cat.id ? "bg-yellow-400 text-slate-800 scale-105" : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                activeCategory === cat.id ? "bg-amber-500 text-slate-950 font-bold scale-105" : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"
               )}
             >
               <cat.icon className="h-8 w-8 mb-1" />
@@ -85,28 +84,33 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                 <div className="p-3">
                   <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">{product.name[lang]}</h3>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="font-bold text-yellow-600 dark:text-yellow-400 text-sm">{product.price} {t.currency}</span>
+                    <span className="font-bold text-amber-500 text-sm">{product.price} {t.currency}</span>
                     {cart[product.id] ? (
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="outline" className="h-7 w-7 rounded-full border-red-200 bg-red-50 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400" onClick={() => removeFromCart(product.id)}>
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-4 text-center text-sm font-bold text-slate-800 dark:text-white">{cart[product.id]}</span>
+                      <div className="flex items-center justify-center gap-1.5 w-full mt-1">
                         <Button 
                           size="icon" 
-                          className="h-7 w-7 rounded-full bg-yellow-400 p-0 text-slate-800 hover:bg-yellow-500" 
+                          variant="outline" 
+                          className="h-8 w-8 rounded-xl border-red-500/30 bg-gradient-to-br from-red-500 to-rose-600 p-0 text-white shadow-md hover:from-red-600 hover:to-rose-700" 
+                          onClick={() => removeFromCart(product.id)}
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </Button>
+                        <span className="w-6 text-center text-sm font-bold text-slate-800 dark:text-white">{cart[product.id]}</span>
+                        <Button 
+                          size="icon" 
+                          className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-0 text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600 font-bold" 
                           onClick={(e) => {
                             addToCart(product.id);
                             onAddToCart(product, e.currentTarget.getBoundingClientRect());
                           }}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     ) : (
                       <Button 
                         size="icon" 
-                        className="h-8 w-8 rounded-full bg-yellow-400 p-0 text-slate-800 hover:bg-yellow-500" 
+                        className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-0 text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600 font-bold" 
                         onClick={(e) => {
                           addToCart(product.id);
                           onAddToCart(product, e.currentTarget.getBoundingClientRect());
@@ -124,13 +128,16 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
       </div>
 
       {cartCount > 0 && (
-        <Card className="fixed bottom-20 left-4 right-4 z-40 border-yellow-200 bg-yellow-50 shadow-lg dark:border-yellow-800 dark:bg-yellow-900/20">
+        <Card className="fixed bottom-16 left-4 right-4 z-40 border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-xl">
           <CardContent className="flex items-center justify-between p-4">
             <div>
-              <p className="text-sm text-slate-600 dark:text-slate-300">{cartCount} {t.items}</p>
-              <p className="text-lg font-bold text-slate-800 dark:text-white">{cartTotal} {t.currency}</p>
+              <p className="text-xs text-slate-400">{cartCount} {t.items}</p>
+              <p className="text-base font-bold text-amber-400 font-mono">{cartTotal} {t.currency}</p>
             </div>
-            <Button onClick={onCheckout} className="rounded-full bg-yellow-400 text-slate-800 hover:bg-yellow-500">
+            <Button 
+              onClick={onCheckout} 
+              className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-bold shadow-md hover:from-amber-500 hover:to-orange-600 px-6"
+            >
               {t.checkout} 
             </Button>
           </CardContent>
