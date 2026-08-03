@@ -33,6 +33,13 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
 
   const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
+  // ترتيب التصنيفات بحيث يتم جلب تصنيف الطلب اليدوي "custom" ليكون في البداية
+  const sortedCategories = [...mockCategories].sort((a, b) => {
+    if (a.id === "custom") return -1;
+    if (b.id === "custom") return 1;
+    return 0;
+  });
+
   return (
     <div className="flex flex-col gap-6 p-4 pt-6 pb-32">
       <header className="flex items-center justify-between pt-4" dir="rtl">
@@ -49,7 +56,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
       <div className="flex flex-col gap-3">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.categories}</h2>
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {mockCategories.map((cat) => (
+          {sortedCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => {
@@ -61,7 +68,9 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
               }}
               className={cn(
                 "flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-2xl shadow-sm transition-all",
-                activeCategory === cat.id ? "bg-amber-500 text-slate-950 font-bold scale-105" : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                activeCategory === cat.id 
+                  ? "bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-bold scale-105 shadow-md" 
+                  : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"
               )}
             >
               <cat.icon className="h-8 w-8 mb-1" />
