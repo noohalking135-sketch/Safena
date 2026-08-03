@@ -67,10 +67,10 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                 }
               }}
               className={cn(
-                "flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-2xl shadow-sm transition-all",
+                "flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-2xl shadow-sm transition-all bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-bold",
                 activeCategory === cat.id 
-                  ? "bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-bold scale-105 shadow-md" 
-                  : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  ? "shadow-inner scale-95 ring-2 ring-orange-600 dark:ring-orange-400" 
+                  : "hover:opacity-90"
               )}
             >
               <cat.icon className="h-8 w-8 mb-1" />
@@ -92,7 +92,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
                 <div className="p-3">
                   <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">{product.name[lang]}</h3>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="font-bold text-amber-500 text-sm">{product.price} {t.currency}</span>
+                    <span className="font-bold text-orange-500 text-sm">{product.price} {t.currency}</span>
                     {cart[product.id] ? (
                       <div className="flex items-center justify-center gap-1.5 w-full mt-1">
                         <Button 
@@ -140,7 +140,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
           <CardContent className="flex items-center justify-between p-4">
             <div>
               <p className="text-xs text-slate-400">{cartCount} {t.items}</p>
-              <p className="text-base font-bold text-amber-400 font-mono">{cartTotal} {t.currency}</p>
+              <p className="text-base font-bold text-orange-400 font-mono">{cartTotal} {t.currency}</p>
             </div>
             <Button 
               onClick={onCheckout} 
