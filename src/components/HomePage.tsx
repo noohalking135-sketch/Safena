@@ -34,9 +34,7 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
   const filteredProducts = activeCategory ? mockProducts.filter(p => p.category === activeCategory) : mockProducts;
 
   return (
-    {/* تم زيادة مسافة الـ padding السفلي لكي لا تختفي المنتجات خلف الشريط */}
     <div className="flex flex-col gap-6 p-4 pt-6 pb-32">
-      {/* تثبيت الهيدر باتجاه RTL لضمان بقاء الشعار يميناً والوصف يساراً بغض النظر عن لغة التطبيق */}
       <header className="flex items-center justify-between pt-4" dir="rtl">
         <img 
           src="/logo.png" 
@@ -129,7 +127,6 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
       </div>
 
       {cartCount > 0 && (
-        {/* تم رفع الشريط عبر جعل الـ bottom مساوياً لـ 20 أو 24 ليظهر بوضوح فوق الشريط السفلي */}
         <Card className="fixed bottom-20 left-4 right-4 z-40 border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-xl">
           <CardContent className="flex items-center justify-between p-4">
             <div>
