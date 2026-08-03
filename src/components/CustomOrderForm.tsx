@@ -65,7 +65,10 @@ export function CustomOrderForm({ t, lang, onAdd, onClose }: any) {
             />
           </div>
 
-          <Button type="submit" className="mt-2 w-full rounded-full bg-yellow-400 py-6 text-base font-bold text-slate-800 hover:bg-yellow-500">
+          <Button 
+            type="submit" 
+            className="mt-2 w-full rounded-full bg-gradient-to-br from-amber-400 to-orange-500 py-6 text-base font-bold text-slate-950 shadow-md hover:from-amber-500 hover:to-orange-600"
+          >
             <Send className="mx-2 h-5 w-5" />
             {t.addCustomToCart || "إضافة الطلب للسلة"}
           </Button>
@@ -74,4 +77,3 @@ export function CustomOrderForm({ t, lang, onAdd, onClose }: any) {
     </Card>
   );
 }
- 
