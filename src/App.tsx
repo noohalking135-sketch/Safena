@@ -210,7 +210,8 @@ export default function App() {
   if (!user) {
     return (
       <div dir="rtl" className="bg-slate-950 text-white min-h-screen">
-        <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
+        {/* تم تغيير الظل هنا إلى برتقالي مموج دائم */}
+        <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-[0_0_35px_rgba(249,115,22,0.35)]">
           <div className={`absolute left-4 top-4 z-50 transition-all duration-300 ${showLangButton ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
             <LanguageToggle lang={lang} setLang={setLang} />
           </div>
@@ -229,7 +230,8 @@ export default function App() {
 
   return (
     <div dir="rtl" className="bg-slate-950 text-white min-h-screen">
-      <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-yellow-300/20">
+      {/* تم تغيير الظل هنا أيضاً إلى برتقالي مموج دائم */}
+      <div className="relative mx-auto h-screen max-w-md overflow-hidden shadow-2xl shadow-[0_0_35px_rgba(249,115,22,0.35)]">
         
         <div className={`absolute left-4 top-4 z-50 transition-all duration-300 ${showLangButton ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
           <LanguageToggle lang={lang} setLang={setLang} />
@@ -295,7 +297,7 @@ export default function App() {
         ))}
 
         <div ref={cartRef} className="absolute bottom-4 end-4 z-[150] hidden">
-          <ShoppingBag className="h-6 w-6 text-yellow-500" />
+          <ShoppingBag className="h-6 w-6 text-orange-500" />
         </div>
 
         <BottomNav page={page} setPage={setPage} t={t} />
