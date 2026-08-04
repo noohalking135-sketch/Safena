@@ -1,7 +1,7 @@
 export const translations = {
   ar: {
     appName: "سفينة نوح لتوصيل الطلبات",
-    tagline: "أسرع توصيلة في الشام",
+    tagline: "أسرع شركة في الشام",
     searchPlaceholder: "ابحث عن مطعم أو طبق...",
     categories: "الأقسام",
     popular: "الأكثر طلباً",
