@@ -10,7 +10,7 @@ export const mockCategories = [
 ];
 
 export const mockProducts = [
-  { id: 1, category: "food", name: { ar: "تشيز برجر", en: "Cheese Burger" }, price: 35, image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80" },
+  { id: 1, category: "food", name: { ar: "بطاطا تشيز", en: "Cheese Potatoes" }, price: 250, image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80" },
   { id: 2, category: "food", name: { ar: "بيبروني بيتزا", en: "Pepperoni Pizza" }, price: 45, image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80" },
   { id: 3, category: "food", name: { ar: "كنتاكي وجبة", en: "Chicken Meal" }, price: 30, image: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=400&q=80" },
   { id: 4, category: "food", name: { ar: "سلطة سيزر", en: "Caesar Salad" }, price: 25, image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=400&q=80" },
