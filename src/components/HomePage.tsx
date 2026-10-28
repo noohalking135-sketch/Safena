@@ -1,5 +1,5 @@
-import { useState } from "react"; 
-import { Search, Plus, Minus } from "lucide-react";
+import { useState, useEffect } from "react"; 
+import { Search, Plus, Minus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,34 @@ import { CustomOrderForm } from "@/components/CustomOrderForm";
 export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: any) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showCustomForm, setShowCustomForm] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
+
+  // إعداد التقاط حدث الرجوع للخلف عند التواجد في الصفحة الرئيسية
+  useEffect(() => {
+    window.history.pushState({ page: "home" }, "", window.location.href);
+
+    const handlePopState = () => {
+      // إظهار نافذة تأكيد الخروج
+      setShowExitModal(true);
+      // إعادة تثبيت الحالة في السجل لعدم الخروج المفاجئ حتى يختار المستخدم
+      window.history.pushState({ page: "home" }, "", window.location.href);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  const handleConfirmExit = () => {
+    setShowExitModal(false);
+    window.history.back();
+  };
+
+  const handleCancelExit = () => {
+    setShowExitModal(false);
+  };
 
   const addToCart = (id: number) => setCart({ ...cart, [id]: (cart[id] || 0) + 1 });
   const removeFromCart = (id: number) => {
@@ -157,8 +185,41 @@ export function HomePage({ t, lang, cart, setCart, onCheckout, onAddToCart }: an
       )}
 
       {showCustomForm && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <CustomOrderForm t={t} lang={lang} onAdd={handleAddCustom} onClose={() => setShowCustomForm(false)} />
+        </div>
+      )}
+
+      {/* نافذة تأكيد الخروج (Exit Confirmation Modal) */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-xs rounded-3xl bg-[#1e2530] p-6 text-center shadow-2xl border border-slate-700/50">
+            {/* أيقونة التحذير */}
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
+              <AlertTriangle className="h-12 w-12 stroke-[1.75]" />
+            </div>
+
+            {/* النص */}
+            <h3 className="mb-6 text-lg font-bold text-white tracking-wide">
+              هل انت متأكد من الخروج
+            </h3>
+
+            {/* الأزرار */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleConfirmExit}
+                className="flex-1 rounded-2xl bg-red-800/90 py-3 text-base font-bold text-white transition-all hover:bg-red-700 active:scale-95 shadow-md"
+              >
+                خروج
+              </button>
+              <button
+                onClick={handleCancelExit}
+                className="flex-1 rounded-2xl bg-amber-500 py-3 text-base font-bold text-slate-950 transition-all hover:bg-amber-400 active:scale-95 shadow-md"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
